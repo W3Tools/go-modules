@@ -36,7 +36,6 @@ func (cli *SuiClient) NewSuiSigner(signer *SuiSigner) {
 		cli.SuiSigner = signer
 	}
 	cli.updateGas(cli.SuiSigner.Signer.Address, cli.SuiSigner.Gas)
-	go cli.AutoUpdateGas(cli.SuiSigner.Signer.Address, cli.SuiSigner.Gas)
 }
 
 func (cli *SuiClient) NewSuiMultiSig(multisig *SuiMultiSig) {
@@ -45,10 +44,25 @@ func (cli *SuiClient) NewSuiMultiSig(multisig *SuiMultiSig) {
 	}
 
 	cli.updateGas(cli.MultiSig.Address, cli.MultiSig.Gas)
-	go cli.AutoUpdateGas(cli.MultiSig.Address, cli.MultiSig.Gas)
 }
 
 // Tools
+func (cli *SuiClient) SetSignerDefaultGasObject(obj string) {
+	cli.SuiSigner.Gas.Live = obj
+}
+
+func (cli *SuiClient) SetMultiSigDefaultGasObject(obj string) {
+	cli.MultiSig.Gas.Live = obj
+}
+
+func (cli *SuiClient) EnableAutoUpdateGasObjectFromSigner() {
+	go cli.AutoUpdateGas(cli.SuiSigner.Signer.Address, cli.SuiSigner.Gas)
+}
+
+func (cli *SuiClient) EnableAutoUpdateGasObjectFromMultiSig() {
+	go cli.AutoUpdateGas(cli.MultiSig.Address, cli.MultiSig.Gas)
+}
+
 func (cli *SuiClient) SetDefaultGasBudget(budget *big.Int) {
 	cli.GasBudget = budget
 }
