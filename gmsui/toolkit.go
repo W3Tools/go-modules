@@ -3,11 +3,12 @@ package gmsui
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"strings"
 	"time"
 
-	"github.com/block-vision/sui-go-sdk/models"
+	"github.com/coming-chat/go-sui/v2/move_types"
+	"github.com/coming-chat/go-sui/v2/sui_types"
+	"github.com/coming-chat/go-sui/v2/types"
 )
 
 func (cli *SuiClient) AutoUpdateGas(owner string, gas *SuiGasObject) {
@@ -44,17 +45,12 @@ func (cli *SuiClient) updateGas(owner string, gas *SuiGasObject) error {
 	var pending []string
 
 	for _, coin := range coins {
-		balance, ok := big.NewInt(0).SetString(coin.Balance, 10)
-		if !ok {
-			continue
-		}
-
 		if strings.EqualFold(live, "") {
-			if balance.Cmp(cli.GasBudget) == 1 {
-				live = coin.CoinObjectId
+			if coin.Balance.Uint64() > cli.GasBudget.Uint64() {
+				live = coin.CoinObjectId.String()
 			}
 		}
-		pending = append(pending, coin.CoinObjectId)
+		pending = append(pending, coin.CoinObjectId.String())
 	}
 
 	gas.Live = live
@@ -63,8 +59,8 @@ func (cli *SuiClient) updateGas(owner string, gas *SuiGasObject) error {
 }
 
 // Instance Get All Sui Coins
-func (cli *SuiClient) GetAllSuiCoins(ctx context.Context, owner string) (data []models.CoinData, err error) {
-	firstPage, err := cli.GetSuiCoins(ctx, owner, "")
+func (cli *SuiClient) GetAllSuiCoins(ctx context.Context, owner string) (data []types.Coin, err error) {
+	firstPage, err := cli.GetSuiCoins(ctx, owner, nil)
 	if err != nil {
 		return
 	}
@@ -85,16 +81,18 @@ func (cli *SuiClient) GetAllSuiCoins(ctx context.Context, owner string) (data []
 	return
 }
 
-func (cli *SuiClient) GetSuiCoins(ctx context.Context, owner, nextCursor string) (ret models.PaginatedCoinsResponse, err error) {
-	var cursor interface{} = nil
-	if !strings.EqualFold(nextCursor, "") {
-		cursor = nextCursor
+func (cli *SuiClient) GetSuiCoins(ctx context.Context, owner string, nextCursor *move_types.AccountAddress) (ret *types.Page[types.Coin, move_types.AccountAddress], err error) {
+	ownerAddress, err := sui_types.NewAddressFromHex(owner)
+	if err != nil {
+		return nil, err
 	}
+	suiCoinType := "0x2::sui::SUI"
 
-	return cli.Provider.SuiXGetCoins(ctx, models.SuiXGetCoinsRequest{
-		Owner:    owner,
-		CoinType: "0x2::sui::SUI",
-		Cursor:   cursor,
-		Limit:    50,
-	})
+	return cli.Provider.GetCoins(
+		ctx,
+		*ownerAddress,
+		&suiCoinType,
+		nextCursor,
+		50,
+	)
 }

@@ -6,12 +6,14 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/block-vision/sui-go-sdk/models"
-	"github.com/block-vision/sui-go-sdk/sui"
+	"github.com/coming-chat/go-sui/v2/client"
+	"github.com/coming-chat/go-sui/v2/lib"
+	"github.com/coming-chat/go-sui/v2/sui_types"
+	"github.com/coming-chat/go-sui/v2/types"
 )
 
 type SuiClient struct {
-	Provider  sui.ISuiAPI
+	Provider  *client.Client
 	SuiSigner *SuiSigner
 	MultiSig  *SuiMultiSig
 	GasBudget *big.Int
@@ -23,7 +25,7 @@ type SuiGasObject struct {
 }
 
 // Create New Sui Client
-func InitSuiClient(suiApi sui.ISuiAPI) (client *SuiClient) {
+func InitSuiClient(suiApi *client.Client) (client *SuiClient) {
 	cli := &SuiClient{
 		Provider:  suiApi,
 		GasBudget: big.NewInt(2000000),
@@ -68,109 +70,66 @@ func (cli *SuiClient) SetDefaultGasBudget(budget *big.Int) {
 }
 
 // Instance: Move Call
-func (cli *SuiClient) NewMoveCall(ctx context.Context, signer, gas, target string, args []interface{}, typeArgs []interface{}) (*models.TxnMetaData, error) {
+func (cli *SuiClient) NewMoveCall(ctx context.Context, signer, gas, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
 	entry := strings.Split(target, "::")
 	if len(entry) != 3 {
 		return nil, fmt.Errorf("invalid target [%s]", target)
 	}
-	metadata, err := cli.Provider.MoveCall(ctx, models.MoveCallRequest{
-		Signer:          signer,
-		PackageObjectId: entry[0],
-		Module:          entry[1],
-		Function:        entry[2],
-		Arguments:       args,
-		TypeArguments:   typeArgs,
-		Gas:             gas,
-		GasBudget:       cli.GasBudget.String(),
-	})
+
+	_signer, err := sui_types.NewAddressFromHex(signer)
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewAddressFromHex(signer) %v", err)
+	}
+
+	packageId, err := sui_types.NewObjectIdFromHex(entry[0])
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex(package) %v", err)
+	}
+
+	_gas, err := sui_types.NewObjectIdFromHex(gas)
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex(gas) %v", err)
+	}
+
+	gasBudget := types.NewSafeSuiBigInt[uint64](cli.GasBudget.Uint64())
+
+	return cli.Provider.MoveCall(ctx, *_signer, *packageId, entry[1], entry[2], typeArgs, args, _gas, gasBudget)
+}
+
+func (cli *SuiClient) NewMoveCallFromSigner(ctx context.Context, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
+	return cli.NewMoveCall(ctx, cli.SuiSigner.Signer.Address, cli.SuiSigner.Gas.Live, target, args, typeArgs)
+}
+
+func (cli *SuiClient) NewMoveCallFromMultiSig(ctx context.Context, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
+	return cli.NewMoveCall(ctx, cli.MultiSig.Address, cli.MultiSig.Gas.Live, target, args, typeArgs)
+}
+
+func (cli *SuiClient) ExecuteTransaction(ctx context.Context, b64TxBytes string, signatures []any) (*types.SuiTransactionBlockResponse, error) {
+	data, err := lib.NewBase64Data(b64TxBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return &metadata, nil
+	return cli.Provider.ExecuteTransactionBlock(ctx, *data, signatures, &types.SuiTransactionBlockResponseOptions{
+		ShowInput:          true,
+		ShowEffects:        true,
+		ShowEvents:         true,
+		ShowObjectChanges:  true,
+		ShowBalanceChanges: true,
+	}, types.TxnRequestTypeWaitForLocalExecution,
+	)
 }
 
-func (cli *SuiClient) MoveCallFromSigner(ctx context.Context, target string, args []interface{}, typeArgs []interface{}) (result *models.SuiTransactionBlockResponse, err error) {
+func (cli *SuiClient) MoveCallFromSigner(ctx context.Context, target string, args []interface{}, typeArgs []string) (result *types.SuiTransactionBlockResponse, err error) {
 	metadata, err := cli.NewMoveCall(ctx, cli.SuiSigner.Signer.Address, cli.SuiSigner.Gas.Live, target, args, typeArgs)
 	if err != nil {
 		return nil, fmt.Errorf("moveCall err %v", err)
 	}
 
-	ret, err := cli.Provider.SignAndExecuteTransactionBlock(ctx, models.SignAndExecuteTransactionBlockRequest{
-		TxnMetaData: *metadata,
-		PriKey:      cli.SuiSigner.Signer.PriKey,
-		Options: models.SuiTransactionBlockOptions{
-			ShowInput:          true,
-			ShowRawInput:       true,
-			ShowEffects:        true,
-			ShowEvents:         true,
-			ShowObjectChanges:  true,
-			ShowBalanceChanges: true,
-		},
-		RequestType: "WaitForLocalExecution",
-	})
+	signature, err := cli.SuiSigner.SignTransaction(metadata.TxBytes.String())
 	if err != nil {
-		return nil, fmt.Errorf("execute err %v", err)
-	}
-	return &ret, err
-}
-
-func (cli *SuiClient) NewMoveCallFromSigner(ctx context.Context, target string, args []interface{}, typeArgs []interface{}) (*models.TxnMetaData, error) {
-	entry := strings.Split(target, "::")
-	if len(entry) != 3 {
-		return nil, fmt.Errorf("invalid target [%s]", target)
-	}
-	metadata, err := cli.Provider.MoveCall(ctx, models.MoveCallRequest{
-		Signer:          cli.SuiSigner.Signer.Address,
-		PackageObjectId: entry[0],
-		Module:          entry[1],
-		Function:        entry[2],
-		Arguments:       args,
-		TypeArguments:   typeArgs,
-		Gas:             cli.SuiSigner.Gas.Live,
-		GasBudget:       cli.GasBudget.String(),
-	})
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cli.SuiSigner.SignTransaction %v", err)
 	}
 
-	return &metadata, nil
-}
-
-func (cli *SuiClient) NewMoveCallFromMultiSig(ctx context.Context, target string, args []interface{}, typeArgs []interface{}) (*models.TxnMetaData, error) {
-	entry := strings.Split(target, "::")
-	if len(entry) != 3 {
-		return nil, fmt.Errorf("invalid target [%s]", target)
-	}
-	metadata, err := cli.Provider.MoveCall(ctx, models.MoveCallRequest{
-		Signer:          cli.MultiSig.Address,
-		PackageObjectId: entry[0],
-		Module:          entry[1],
-		Function:        entry[2],
-		Arguments:       args,
-		TypeArguments:   typeArgs,
-		Gas:             cli.MultiSig.Gas.Live,
-		GasBudget:       cli.GasBudget.String(),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &metadata, nil
-}
-
-func (cli *SuiClient) ExecuteTransaction(ctx context.Context, b64TxBytes string, signatures []string) (models.SuiTransactionBlockResponse, error) {
-	return cli.Provider.SuiExecuteTransactionBlock(ctx, models.SuiExecuteTransactionBlockRequest{
-		TxBytes:   b64TxBytes,
-		Signature: signatures,
-		Options: models.SuiTransactionBlockOptions{
-			ShowInput:          true,
-			ShowRawInput:       true,
-			ShowEffects:        true,
-			ShowEvents:         true,
-			ShowObjectChanges:  true,
-			ShowBalanceChanges: true,
-		},
-		RequestType: "WaitForLocalExecution",
-	})
+	return cli.ExecuteTransaction(ctx, metadata.TxBytes.String(), []any{signature.Signature})
 }

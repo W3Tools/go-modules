@@ -1,6 +1,8 @@
 package gmsui
 
-import "github.com/block-vision/sui-go-sdk/sui"
+import (
+	"github.com/coming-chat/go-sui/v2/client"
+)
 
 type SuiNetwork = string
 
@@ -11,7 +13,7 @@ var (
 )
 
 // Create New Provider
-func NewSuiProviderFromNetwork(network SuiNetwork) sui.ISuiAPI {
+func NewSuiProviderFromNetwork(network SuiNetwork) (*client.Client, error) {
 	switch network {
 	case "mainnet":
 		return NewSuiProvider(MainnetFullNode)
@@ -24,6 +26,6 @@ func NewSuiProviderFromNetwork(network SuiNetwork) sui.ISuiAPI {
 	}
 }
 
-func NewSuiProvider(rpc string) sui.ISuiAPI {
-	return sui.NewSuiClient(rpc)
+func NewSuiProvider(rpc string) (*client.Client, error) {
+	return client.Dial(rpc)
 }

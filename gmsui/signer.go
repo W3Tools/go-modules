@@ -6,14 +6,17 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/block-vision/sui-go-sdk/signer"
+	"github.com/coming-chat/go-aptos/crypto/derivation"
+	"github.com/coming-chat/go-sui/v2/account"
+	"github.com/coming-chat/go-sui/v2/lib"
+	"github.com/coming-chat/go-sui/v2/sui_types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/tyler-smith/go-bip39"
 	"golang.org/x/crypto/blake2b"
 )
 
 type SuiSigner struct {
-	Signer *signer.Signer
+	Signer *account.Account
 	Gas    *SuiGasObject
 }
 
@@ -51,7 +54,7 @@ func NewSuiSignerFromMnemonic(mnemonic string, derivePath string) (*SuiSigner, e
 		derivePath = "m/44'/784'/0'/0'/0'"
 	}
 
-	key, err := signer.DeriveForPath(derivePath, seed)
+	key, err := derivation.DeriveForPath(derivePath, seed)
 	if err != nil {
 		return nil, err
 	}
@@ -60,15 +63,16 @@ func NewSuiSignerFromMnemonic(mnemonic string, derivePath string) (*SuiSigner, e
 }
 
 func NewSuiSignerFromSeed(seed []byte) *SuiSigner {
+	scheme := sui_types.SignatureScheme{ED25519: &lib.EmptyEnum{}}
 	return &SuiSigner{
-		Signer: signer.NewSigner(seed),
+		Signer: account.NewAccount(scheme, seed),
 		Gas:    &SuiGasObject{},
 	}
 }
 
 // Instance Function
 func (s *SuiSigner) GetPulbicKey() string {
-	return Ed25519PublicKeyToB64PublicKey(s.Signer.PubKey)
+	return Ed25519PublicKeyToB64PublicKey(s.Signer.KeyPair.PublicKey())
 }
 
 func (s *SuiSigner) GetAddress() string {
@@ -89,14 +93,15 @@ func (s *SuiSigner) SignMessage(data string, scope IntentScope) (*SuiSignedDataR
 	message := NewSuiMessageWithIntent(txBytes, scope)
 	digest := blake2b.Sum256(message)
 	var noHash crypto.Hash
-	sigBytes, err := s.Signer.PriKey.Sign(nil, digest[:], noHash)
+	privateKey := ed25519.PrivateKey(s.Signer.KeyPair.Ed25519.PrivateKey())
+	sigBytes, err := privateKey.Sign(nil, digest[:], noHash)
 	if err != nil {
 		return nil, err
 	}
 
 	ret := &SuiSignedDataRet{
 		TxBytes:   data,
-		Signature: toSerializedSignature(sigBytes, s.Signer.PriKey.Public().(ed25519.PublicKey)),
+		Signature: toSerializedSignature(sigBytes, s.Signer.KeyPair.PublicKey()),
 	}
 	return ret, nil
 }
