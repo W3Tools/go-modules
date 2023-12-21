@@ -2,6 +2,7 @@ package gmsui
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"math/big"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/coming-chat/go-sui/v2/move_types"
 	"github.com/coming-chat/go-sui/v2/sui_types"
 	"github.com/coming-chat/go-sui/v2/types"
+	"github.com/fardream/go-bcs/bcs"
 )
 
 type SuiClient struct {
@@ -165,4 +167,37 @@ func (cli *SuiClient) ImplementationOfDevInspect(ctx context.Context, txBytes st
 	}
 
 	return cli.Provider.DevInspectTransactionBlock(ctx, *accountObj, *txb, nil, nil)
+}
+
+func (cli *SuiClient) TryDevInspect(ctx context.Context, target string, args []sui_types.CallArg, typeArgs []move_types.TypeTag) (*types.DevInspectResults, error) {
+	entry := strings.Split(target, "::")
+	if len(entry) != 3 {
+		return nil, fmt.Errorf("invalid target [%s]", target)
+	}
+
+	packageId, err := sui_types.NewObjectIdFromHex(entry[0])
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex(package) %v", err)
+	}
+
+	builder := sui_types.NewProgrammableTransactionBuilder()
+	err = builder.MoveCall(
+		*packageId,
+		move_types.Identifier(entry[1]),
+		move_types.Identifier(entry[2]),
+		typeArgs,
+		args,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewProgrammableTransactionBuilder %v", err)
+	}
+
+	transaction := builder.Finish()
+	bcsBytes, err := bcs.Marshal(transaction)
+	if err != nil {
+		return nil, fmt.Errorf("bcs.Marshal %v", err)
+	}
+
+	txBytes := append([]byte{0}, bcsBytes...)
+	return cli.ImplementationOfDevInspect(ctx, base64.StdEncoding.EncodeToString(txBytes))
 }

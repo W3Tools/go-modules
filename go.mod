@@ -10,6 +10,7 @@ require (
 	github.com/coming-chat/go-sui/v2 v2.0.0
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/everFinance/goar v1.4.5
+	github.com/fardream/go-bcs v0.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.14.0
 	github.com/go-sql-driver/mysql v1.7.1
@@ -40,7 +41,6 @@ require (
 	github.com/everFinance/goether v1.1.7 // indirect
 	github.com/everFinance/gojwk v1.0.0 // indirect
 	github.com/everFinance/ttcrsa v1.1.3 // indirect
-	github.com/fardream/go-bcs v0.2.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

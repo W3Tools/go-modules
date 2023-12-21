@@ -188,8 +188,8 @@ github.com/everFinance/gojwk v1.0.0 h1:le/oI2NgXlrqg3MHU6ka+V30EWcD7TD6+Ilh+go79
 github.com/everFinance/gojwk v1.0.0/go.mod h1:icXSXsIdpAczlpAtSljQlmABkMTRZENr73KHmo0GOGc=
 github.com/everFinance/ttcrsa v1.1.3 h1:RJl9UizbevHZUiWPHVKz1aM6yA8cmkZWaCbOGTD/L0I=
 github.com/everFinance/ttcrsa v1.1.3/go.mod h1:Ws7b/oDbYKaZlvyT17nm+zHmzVhGl51r/yPx/Ib5RQk=
-github.com/fardream/go-bcs v0.2.1 h1:ffW/0Jr0b2WXLNPF8AX6wWI9ETVE4+aXkv2aIXVViwE=
-github.com/fardream/go-bcs v0.2.1/go.mod h1:UsoxhIoe2GsVexX0s5NDLIChxeb/JUbjw7IWzzgF3Xk=
+github.com/fardream/go-bcs v0.4.0 h1:J2yQZRAnkg/yMgP9MPf/qj9jJfD6w/LCMdWtC9Cbn08=
+github.com/fardream/go-bcs v0.4.0/go.mod h1:UsoxhIoe2GsVexX0s5NDLIChxeb/JUbjw7IWzzgF3Xk=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5 h1:FtmdgXiUlNeRsoNMFlKLDt+S+6hbjVMEW6RGQ7aUf7c=
 github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5/go.mod h1:VvhXpOYNQvB+uIk2RvXzuaQtkQJzzIx6lSBe1xv7hi0=
