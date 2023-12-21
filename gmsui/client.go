@@ -133,3 +133,20 @@ func (cli *SuiClient) MoveCallFromSigner(ctx context.Context, target string, arg
 
 	return cli.ExecuteTransaction(ctx, metadata.TxBytes.String(), []any{signature.Signature})
 }
+
+func (cli *SuiClient) GetObject(ctx context.Context, objectId string) (*types.SuiObjectResponse, error) {
+	_objectId, err := sui_types.NewObjectIdFromHex(objectId)
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex %v", err)
+	}
+
+	return cli.Provider.GetObject(ctx, *_objectId, &types.SuiObjectDataOptions{
+		ShowType:                true,
+		ShowContent:             true,
+		ShowBcs:                 true,
+		ShowOwner:               true,
+		ShowPreviousTransaction: true,
+		ShowStorageRebate:       true,
+		ShowDisplay:             true,
+	})
+}
