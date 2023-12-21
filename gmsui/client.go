@@ -8,6 +8,7 @@ import (
 
 	"github.com/coming-chat/go-sui/v2/client"
 	"github.com/coming-chat/go-sui/v2/lib"
+	"github.com/coming-chat/go-sui/v2/move_types"
 	"github.com/coming-chat/go-sui/v2/sui_types"
 	"github.com/coming-chat/go-sui/v2/types"
 )
@@ -149,4 +150,19 @@ func (cli *SuiClient) GetObject(ctx context.Context, objectId string) (*types.Su
 		ShowStorageRebate:       true,
 		ShowDisplay:             true,
 	})
+}
+
+func (cli *SuiClient) ImplementationOfDevInspect(ctx context.Context, txBytes string) (*types.DevInspectResults, error) {
+	var accountObj *move_types.AccountAddress
+	accountObj, err := sui_types.NewAddressFromHex("0x0000000000000000000000000000000000000000000000000000000000000000")
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewAddressFromHex %v", err)
+	}
+
+	txb, err := lib.NewBase64Data(txBytes)
+	if err != nil {
+		return nil, fmt.Errorf("lib.NewBase64Data %v", err)
+	}
+
+	return cli.Provider.DevInspectTransactionBlock(ctx, *accountObj, *txb, nil, nil)
 }
