@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"encoding/base64"
+	"fmt"
 	"strings"
 
 	"github.com/coming-chat/go-aptos/crypto/derivation"
@@ -11,6 +12,7 @@ import (
 	"github.com/coming-chat/go-sui/v2/lib"
 	"github.com/coming-chat/go-sui/v2/sui_types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/fardream/go-bcs/bcs"
 	"github.com/tyler-smith/go-bip39"
 	"golang.org/x/crypto/blake2b"
 )
@@ -84,7 +86,11 @@ func (s *SuiSigner) SignTransaction(b64TxBytes string) (*SuiSignedTransactionRet
 }
 
 func (s *SuiSigner) SignPersonalMessage(message string) (*SuiSignedMessageRet, error) {
-	b64Message := base64.StdEncoding.EncodeToString([]byte(message))
+	bcsData, err := bcs.Marshal(message)
+	if err != nil {
+		return nil, fmt.Errorf("bcs.Marshal %v", err)
+	}
+	b64Message := base64.StdEncoding.EncodeToString(bcsData)
 	return s.SignMessage(b64Message, PersonalMessageIntentScope)
 }
 

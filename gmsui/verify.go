@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/fardream/go-bcs/bcs"
 	"golang.org/x/crypto/blake2b"
 )
 
 func VerifyPersonalMessage(message string, signature string) (signer string, pass bool, err error) {
-	b64Message := base64.StdEncoding.EncodeToString([]byte(message))
+	bcsData, _ := bcs.Marshal(message)
+	b64Message := base64.StdEncoding.EncodeToString(bcsData)
 	return VerifyMessage(b64Message, signature, PersonalMessageIntentScope)
 }
 
@@ -18,7 +20,11 @@ func VerifyTransactionMessage(b64Message string, signature string) (signer strin
 }
 
 func VerifyMessage(message, signature string, scope IntentScope) (signer string, pass bool, err error) {
-	b64Bytes, _ := base64.StdEncoding.DecodeString(message)
+	b64Bytes, err := base64.StdEncoding.DecodeString(message)
+	if err != nil {
+		return "", false, fmt.Errorf("base64.StdEncoding.DecodeString %v", err)
+	}
+
 	messageBytes := NewSuiMessageWithIntent(b64Bytes, scope)
 
 	serializedSignature, err := fromSerializedSignature(signature)
