@@ -3,10 +3,20 @@ package gmsui
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/coming-chat/go-sui/v2/client"
 	"github.com/coming-chat/go-sui/v2/sui_types"
 )
+
+func (cli *SuiClient) GetFunctionArgTypes(ctx context.Context, target string) (*[]interface{}, error) {
+	entry := strings.Split(target, "::")
+	if len(entry) != 3 {
+		return nil, fmt.Errorf("invalid target [%s]", target)
+	}
+
+	return cli.GetMoveFunctionArgTypes(ctx, entry[0], entry[1], entry[2])
+}
 
 func (cli *SuiClient) GetMoveFunctionArgTypes(ctx context.Context, packageId, module, function string) (*[]interface{}, error) {
 	pkg, err := sui_types.NewAddressFromHex(packageId)
