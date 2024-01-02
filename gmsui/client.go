@@ -201,3 +201,123 @@ func (cli *SuiClient) TryDevInspect(ctx context.Context, target string, args []s
 	txBytes := append([]byte{0}, bcsBytes...)
 	return cli.ImplementationOfDevInspect(ctx, base64.StdEncoding.EncodeToString(txBytes))
 }
+
+func (cli *SuiClient) ParseFunctionArgs(ctx context.Context, target string, args []interface{}) (ret []sui_types.CallArg, err error) {
+	functionArgTypes, err := cli.GetFunctionArgTypes(ctx, target)
+	if err != nil {
+		return nil, fmt.Errorf("cli.GetFunctionArgTypes %v", err)
+	}
+	if len(*functionArgTypes) > 0 && args == nil {
+		return nil, fmt.Errorf("invalid arg length, required: %d, but got nil", len(*functionArgTypes))
+	}
+	if len(*functionArgTypes) != len(args) {
+		return nil, fmt.Errorf("invalid arg length, required: %d, but got %d", len(*functionArgTypes), len(args))
+	}
+
+	for idx, functionArgType := range *functionArgTypes {
+		switch argType := functionArgType.(type) {
+		case string:
+			if argType != "Pure" {
+				return nil, fmt.Errorf("unknown string type: %v", argType)
+			}
+
+			switch arg := args[idx].(type) {
+			case uint8, uint16, uint32, uint64, big.Int:
+				bcsArg, err := bcs.Marshal(arg)
+				if err != nil {
+					return nil, fmt.Errorf("givenArgs index: [%d], bcs.Marshal %v", idx, err)
+				}
+				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			case string:
+				address, err := sui_types.NewAddressFromHex(arg)
+				if err != nil {
+					return nil, fmt.Errorf("sui_types.NewAddressFromHex %v", err)
+				}
+
+				bcsArg, err := bcs.Marshal(address)
+				if err != nil {
+					return nil, fmt.Errorf("givenArgs index: [%d], bcs.Marshal %v", idx, err)
+				}
+				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			case []uint8:
+				vector := VectorU8{Data: arg}
+				bcsArg, err := vector.Marshal()
+				if err != nil {
+					return nil, fmt.Errorf("vector.Marshal %v", err)
+				}
+				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			case []uint16:
+				vector := VectorU16{Data: arg}
+				bcsArg, err := vector.Marshal()
+				if err != nil {
+					return nil, fmt.Errorf("vector.Marshal %v", err)
+				}
+				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			case []uint32:
+				vector := VectorU32{Data: arg}
+				bcsArg, err := vector.Marshal()
+				if err != nil {
+					return nil, fmt.Errorf("vector.Marshal %v", err)
+				}
+				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			case []uint64:
+				vector := VectorU64{Data: arg}
+				bcsArg, err := vector.Marshal()
+				if err != nil {
+					return nil, fmt.Errorf("vector.Marshal %v", err)
+				}
+				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			case []big.Int:
+				vector := VectorBigInt{Data: arg}
+				bcsArg, err := vector.Marshal()
+				if err != nil {
+					return nil, fmt.Errorf("vector.Marshal %v", err)
+				}
+				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			case []string:
+				vector := VectorAddress{Data: arg}
+				bcsArg, err := vector.Marshal()
+				if err != nil {
+					return nil, fmt.Errorf("vector.Marshal %v", err)
+				}
+				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			default:
+				return nil, fmt.Errorf("invalid givenArgs: %v, type: %T", args[idx], args[idx])
+			}
+		case map[string]interface{}:
+			objType, ok := argType["Object"]
+			if !ok {
+				return nil, fmt.Errorf("unknown map type: %v", argType)
+			}
+
+			mutable := false
+			if objType == "ByMutableReference" {
+				mutable = true
+			}
+
+			if fmt.Sprintf("%T", args[idx]) != "string" {
+				return nil, fmt.Errorf("invalid object type, index: [%d], value: %v", idx, args[idx])
+			}
+
+			obj, err := cli.GetObject(ctx, args[idx].(string))
+			if err != nil {
+				return nil, fmt.Errorf("suiClient.GetObject %v", err)
+			}
+
+			ret = append(ret, sui_types.CallArg{
+				Object: &sui_types.ObjectArg{
+					SharedObject: &struct {
+						Id                   move_types.AccountAddress
+						InitialSharedVersion uint64
+						Mutable              bool
+					}{
+						Id:                   obj.Data.ObjectId,
+						InitialSharedVersion: *obj.Data.Owner.Shared.InitialSharedVersion,
+						Mutable:              mutable,
+					},
+				},
+			})
+		}
+	}
+	return
+}
