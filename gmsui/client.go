@@ -201,6 +201,13 @@ func (cli *SuiClient) TryDevInspect(ctx context.Context, target string, args []s
 	txBytes := append([]byte{0}, bcsBytes...)
 	return cli.ImplementationOfDevInspect(ctx, base64.StdEncoding.EncodeToString(txBytes))
 }
+func (cli *SuiClient) DevInspect(ctx context.Context, target string, args []interface{}, argsType []move_types.TypeTag) (*types.DevInspectResults, error) {
+	_args, err := cli.ParseFunctionArgs(ctx, target, args)
+	if err != nil {
+		return nil, fmt.Errorf("suiClient.ParseFunctionArgs %v", err)
+	}
+	return cli.TryDevInspect(ctx, target, _args, argsType)
+}
 
 func (cli *SuiClient) ParseFunctionArgs(ctx context.Context, target string, args []interface{}) (ret []sui_types.CallArg, err error) {
 	functionArgTypes, err := cli.GetFunctionArgTypes(ctx, target)
