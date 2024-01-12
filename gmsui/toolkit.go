@@ -36,7 +36,8 @@ func (cli *SuiClient) AutoUpdateGas(owner string, gas *SuiGasObject) {
 }
 
 func (cli *SuiClient) updateGas(owner string, gas *SuiGasObject) error {
-	coins, err := cli.GetAllSuiCoins(context.Background(), owner)
+	coinType := "0x2::sui::SUI"
+	coins, err := cli.GetAllCoins(context.Background(), owner, coinType)
 	if err != nil {
 		return err
 	}
@@ -59,8 +60,8 @@ func (cli *SuiClient) updateGas(owner string, gas *SuiGasObject) error {
 }
 
 // Instance Get All Sui Coins
-func (cli *SuiClient) GetAllSuiCoins(ctx context.Context, owner string) (data []types.Coin, err error) {
-	firstPage, err := cli.GetSuiCoins(ctx, owner, nil)
+func (cli *SuiClient) GetAllCoins(ctx context.Context, owner string, coinType string) (data []types.Coin, err error) {
+	firstPage, err := cli.GetCoins(ctx, owner, coinType, nil)
 	if err != nil {
 		return
 	}
@@ -69,7 +70,7 @@ func (cli *SuiClient) GetAllSuiCoins(ctx context.Context, owner string) (data []
 	nextCursor := firstPage.NextCursor
 	hasNext := firstPage.HasNextPage
 	for hasNext {
-		nextPage, err := cli.GetSuiCoins(ctx, owner, nextCursor)
+		nextPage, err := cli.GetCoins(ctx, owner, coinType, nextCursor)
 		if err != nil {
 			break
 		}
@@ -81,17 +82,16 @@ func (cli *SuiClient) GetAllSuiCoins(ctx context.Context, owner string) (data []
 	return
 }
 
-func (cli *SuiClient) GetSuiCoins(ctx context.Context, owner string, nextCursor *move_types.AccountAddress) (ret *types.Page[types.Coin, move_types.AccountAddress], err error) {
+func (cli *SuiClient) GetCoins(ctx context.Context, owner, coinType string, nextCursor *move_types.AccountAddress) (ret *types.Page[types.Coin, move_types.AccountAddress], err error) {
 	ownerAddress, err := sui_types.NewAddressFromHex(owner)
 	if err != nil {
 		return nil, err
 	}
-	suiCoinType := "0x2::sui::SUI"
 
 	return cli.Provider.GetCoins(
 		ctx,
 		*ownerAddress,
-		&suiCoinType,
+		&coinType,
 		nextCursor,
 		50,
 	)
