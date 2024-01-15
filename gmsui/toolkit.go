@@ -96,3 +96,21 @@ func (cli *SuiClient) GetCoins(ctx context.Context, owner, coinType string, next
 		50,
 	)
 }
+
+func (cli *SuiClient) GetMaxCoinObject(ctx context.Context, address, coinType string) (*types.Coin, error) {
+	coins, err := cli.GetAllCoins(ctx, address, coinType)
+	if err != nil {
+		return nil, fmt.Errorf("p.SuiClient.GetAllSuiCoins %v", err)
+	}
+	if len(coins) == 0 {
+		return nil, fmt.Errorf("address: [%s], coins not found, type: %s", address, coinType)
+	}
+
+	max := coins[0]
+	for _, coin := range coins {
+		if coin.Balance.Uint64() > max.Balance.Uint64() {
+			max = coin
+		}
+	}
+	return &max, nil
+}
