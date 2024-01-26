@@ -31,7 +31,7 @@ type SuiGasObject struct {
 func InitSuiClient(suiApi *client.Client) (client *SuiClient) {
 	cli := &SuiClient{
 		Provider:  suiApi,
-		GasBudget: big.NewInt(2000000),
+		GasBudget: big.NewInt(400000000),
 	}
 	return cli
 }
