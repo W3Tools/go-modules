@@ -10,7 +10,7 @@ require (
 	github.com/coming-chat/go-sui/v2 v2.0.0
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/everFinance/goar v1.4.5
-	github.com/fardream/go-bcs v0.4.0
+	github.com/fardream/go-bcs v0.2.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.14.0
 	github.com/go-sql-driver/mysql v1.7.1
