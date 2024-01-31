@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fardream/go-bcs/bcs"
 	"golang.org/x/crypto/blake2b"
 )
 
@@ -81,18 +82,70 @@ func (m *SuiMultiSig) ToMultiSigAddress() (string, error) {
 }
 
 func (m *SuiMultiSig) CombineSignatures(signatures []string) (string, error) {
-	cli := NewSuiSignatureCombineClient(m.PublicKeyMap, m.Threshold)
+	if len(signatures) > MaxSignerInMultisig {
+		return "", fmt.Errorf("max number of signatures in a multisig is %d", MaxSignerInMultisig)
+	}
 
-	res, err := cli.TryGetCombineSignatures(signatures)
+	if len(signatures) > MaxSignerInMultisig {
+		return "", fmt.Errorf("max number of signatures in a multisig is %d", MaxSignerInMultisig)
+	}
+
+	multisig := &MultiSigStruct{
+		Sigs:   []CompressedSignature{},
+		Bitmap: 0,
+		MultisigPK: MultiSigPublicKeyStruct{
+			PKMap:     []PubkeyEnumWeightPair{},
+			Threshold: m.Threshold,
+		},
+	}
+
+	for idx, pubKey := range m.PublicKeyMap {
+		pubKeyBytes, err := base64.StdEncoding.DecodeString(pubKey.PublicKey)
+		if err != nil {
+			return "", fmt.Errorf("base64.StdEncoding.DecodeString %v", err)
+		}
+		multisig.MultisigPK.PKMap = append(multisig.MultisigPK.PKMap, PubkeyEnumWeightPair{
+			PubKey: [33]byte(pubKeyBytes),
+			Weight: pubKey.Weight,
+		})
+
+		for _, signature := range signatures {
+			_bytes, err := base64.StdEncoding.DecodeString(signature)
+			if err != nil {
+				return "", fmt.Errorf("base64.StdEncoding.DecodeString %v", err)
+			}
+
+			parsedPublicKey := _bytes[len(_bytes)-32:]
+			if strings.EqualFold(hex.EncodeToString(pubKeyBytes[1:]), hex.EncodeToString(parsedPublicKey)) {
+				multisig.Sigs = append(multisig.Sigs, CompressedSignature{
+					Signature: [65]byte(_bytes[:len(_bytes)-32]),
+				})
+				multisig.Bitmap |= 1 << idx
+			}
+		}
+	}
+
+	message, err := bcs.Marshal(&multisig)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("bcs.Marshal %v", err)
 	}
+	tmp := new(bytes.Buffer)
+	tmp.WriteByte(0x03)
+	tmp.Write(message)
+	return base64.StdEncoding.EncodeToString(tmp.Bytes()), nil
 
-	if !strings.EqualFold(strings.ToLower(m.Address), strings.ToLower(res.Address)) {
-		return "", fmt.Errorf("signature address is inconsistent")
-	}
+	// cli := NewSuiSignatureCombineClient(m.PublicKeyMap, m.Threshold)
 
-	return res.Serialized, nil
+	// res, err := cli.TryGetCombineSignatures(signatures)
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	// if !strings.EqualFold(strings.ToLower(m.Address), strings.ToLower(res.Address)) {
+	// 	return "", fmt.Errorf("signature address is inconsistent")
+	// }
+
+	// return res.Serialized, nil
 }
 
 type SuiMultiSigInfo struct {
