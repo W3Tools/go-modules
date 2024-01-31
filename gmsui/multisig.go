@@ -86,10 +86,6 @@ func (m *SuiMultiSig) CombineSignatures(signatures []string) (string, error) {
 		return "", fmt.Errorf("max number of signatures in a multisig is %d", MaxSignerInMultisig)
 	}
 
-	if len(signatures) > MaxSignerInMultisig {
-		return "", fmt.Errorf("max number of signatures in a multisig is %d", MaxSignerInMultisig)
-	}
-
 	multisig := &MultiSigStruct{
 		Sigs:   []CompressedSignature{},
 		Bitmap: 0,
@@ -133,19 +129,6 @@ func (m *SuiMultiSig) CombineSignatures(signatures []string) (string, error) {
 	tmp.WriteByte(0x03)
 	tmp.Write(message)
 	return base64.StdEncoding.EncodeToString(tmp.Bytes()), nil
-
-	// cli := NewSuiSignatureCombineClient(m.PublicKeyMap, m.Threshold)
-
-	// res, err := cli.TryGetCombineSignatures(signatures)
-	// if err != nil {
-	// 	return "", err
-	// }
-
-	// if !strings.EqualFold(strings.ToLower(m.Address), strings.ToLower(res.Address)) {
-	// 	return "", fmt.Errorf("signature address is inconsistent")
-	// }
-
-	// return res.Serialized, nil
 }
 
 type SuiMultiSigInfo struct {
