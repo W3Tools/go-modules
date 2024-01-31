@@ -33,3 +33,16 @@ type PubkeyEnumWeightPair struct {
 	PubKey [33]byte `json:"pub_key"`
 	Weight uint8    `json:"weight"`
 }
+
+type SuiMultiSigInfo struct {
+	Address   string
+	Threshold uint16
+	Signers   []SuiMultiSigInfoSigner
+}
+
+type SuiMultiSigInfoSigner struct {
+	Address      string
+	B64PublicKey string
+	HexPublicKey string
+	Weight       uint8
+}

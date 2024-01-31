@@ -121,27 +121,7 @@ func (m *SuiMultiSig) CombineSignatures(signatures []string) (string, error) {
 		}
 	}
 
-	message, err := bcs.Marshal(&multisig)
-	if err != nil {
-		return "", fmt.Errorf("bcs.Marshal %v", err)
-	}
-	tmp := new(bytes.Buffer)
-	tmp.WriteByte(0x03)
-	tmp.Write(message)
-	return base64.StdEncoding.EncodeToString(tmp.Bytes()), nil
-}
-
-type SuiMultiSigInfo struct {
-	Address   string
-	Threshold uint16
-	Signers   []SuiMultiSigInfoSigner
-}
-
-type SuiMultiSigInfoSigner struct {
-	Address      string
-	B64PublicKey string
-	HexPublicKey string
-	Weight       uint8
+	return multisig.toSerializedSignature()
 }
 
 func (m *SuiMultiSig) Info() *SuiMultiSigInfo {
@@ -161,4 +141,16 @@ func (m *SuiMultiSig) Info() *SuiMultiSigInfo {
 		})
 	}
 	return info
+}
+
+func (s *MultiSigStruct) toSerializedSignature() (string, error) {
+	_bytes, err := bcs.Marshal(&s)
+	if err != nil {
+		return "", fmt.Errorf("bcs.Marshal %v", err)
+	}
+
+	tmp := new(bytes.Buffer)
+	tmp.WriteByte(0x03)
+	tmp.Write(_bytes)
+	return base64.StdEncoding.EncodeToString(tmp.Bytes()), nil
 }
