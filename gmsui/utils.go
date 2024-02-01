@@ -82,7 +82,7 @@ func NewSuiMessageWithIntent(message []byte, scope IntentScope) []byte {
 	return intentMessage
 }
 
-func toSerializedSignature(signature, pubKey []byte) string {
+func ToSerializedSignature(signature, pubKey []byte) string {
 	signatureLen := len(signature)
 	pubKeyLen := len(pubKey)
 	serializedSignature := make([]byte, 1+signatureLen+pubKeyLen)
@@ -92,7 +92,7 @@ func toSerializedSignature(signature, pubKey []byte) string {
 	return base64.StdEncoding.EncodeToString(serializedSignature)
 }
 
-func fromSerializedSignature(serializedSignature string) (*SignaturePubkeyPair, error) {
+func FromSerializedSignature(serializedSignature string) (*SignaturePubkeyPair, error) {
 	_bytes, err := base64.StdEncoding.DecodeString(serializedSignature)
 	if err != nil {
 		return nil, err

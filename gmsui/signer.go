@@ -107,7 +107,7 @@ func (s *SuiSigner) SignMessage(data string, scope IntentScope) (*SuiSignedDataR
 
 	ret := &SuiSignedDataRet{
 		TxBytes:   data,
-		Signature: toSerializedSignature(sigBytes, s.Signer.KeyPair.PublicKey()),
+		Signature: ToSerializedSignature(sigBytes, s.Signer.KeyPair.PublicKey()),
 	}
 	return ret, nil
 }

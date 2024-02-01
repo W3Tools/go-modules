@@ -27,7 +27,7 @@ func VerifyMessage(message, signature string, scope IntentScope) (signer string,
 
 	messageBytes := NewSuiMessageWithIntent(b64Bytes, scope)
 
-	serializedSignature, err := fromSerializedSignature(signature)
+	serializedSignature, err := FromSerializedSignature(signature)
 	if err != nil {
 		return "", false, err
 	}
