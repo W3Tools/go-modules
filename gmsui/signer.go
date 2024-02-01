@@ -98,15 +98,19 @@ func (s *SuiSigner) SignMessage(data string, scope IntentScope) (*SuiSignedDataR
 	txBytes, _ := base64.StdEncoding.DecodeString(data)
 	message := NewSuiMessageWithIntent(txBytes, scope)
 	digest := blake2b.Sum256(message)
+	return s.SignMessageBytes(digest[:])
+}
+
+func (s *SuiSigner) SignMessageBytes(data []byte) (*SuiSignedDataRet, error) {
 	var noHash crypto.Hash
 	privateKey := ed25519.PrivateKey(s.Signer.KeyPair.Ed25519.PrivateKey())
-	sigBytes, err := privateKey.Sign(nil, digest[:], noHash)
+	sigBytes, err := privateKey.Sign(nil, data, noHash)
 	if err != nil {
 		return nil, err
 	}
 
 	ret := &SuiSignedDataRet{
-		TxBytes:   data,
+		TxBytes:   base64.StdEncoding.EncodeToString(data),
 		Signature: ToSerializedSignature(sigBytes, s.Signer.KeyPair.PublicKey()),
 	}
 	return ret, nil
