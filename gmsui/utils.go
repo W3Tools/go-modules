@@ -97,7 +97,7 @@ func FromSerializedSignature(serializedSignature string) (*SignaturePubkeyPair, 
 	if err != nil {
 		return nil, err
 	}
-	signatureScheme := parseSignatureScheme(_bytes[0])
+	signatureScheme := ParseSignatureScheme(_bytes[0])
 	if strings.EqualFold(serializedSignature, "") {
 		return nil, fmt.Errorf("multiSig is not supported")
 	}
@@ -113,7 +113,7 @@ func FromSerializedSignature(serializedSignature string) (*SignaturePubkeyPair, 
 	return keyPair, nil
 }
 
-func parseSignatureScheme(scheme byte) string {
+func ParseSignatureScheme(scheme byte) string {
 	switch scheme {
 	case 0:
 		return "ED25519"
