@@ -201,6 +201,7 @@ func (cli *SuiClient) TryDevInspect(ctx context.Context, target string, args []s
 	txBytes := append([]byte{0}, bcsBytes...)
 	return cli.ImplementationOfDevInspect(ctx, base64.StdEncoding.EncodeToString(txBytes))
 }
+
 func (cli *SuiClient) DevInspect(ctx context.Context, target string, args []interface{}, argsType []move_types.TypeTag) (*types.DevInspectResults, error) {
 	_args, err := cli.ParseFunctionArgs(ctx, target, args)
 	if err != nil {
@@ -311,20 +312,73 @@ func (cli *SuiClient) ParseFunctionArgs(ctx context.Context, target string, args
 				return nil, fmt.Errorf("suiClient.GetObject %v", err)
 			}
 
-			ret = append(ret, sui_types.CallArg{
-				Object: &sui_types.ObjectArg{
-					SharedObject: &struct {
-						Id                   move_types.AccountAddress
-						InitialSharedVersion uint64
-						Mutable              bool
-					}{
-						Id:                   obj.Data.ObjectId,
-						InitialSharedVersion: *obj.Data.Owner.Shared.InitialSharedVersion,
-						Mutable:              mutable,
-					},
-				},
-			})
+			var objectArgs sui_types.ObjectArg
+			if obj.Data.Owner.Shared == nil {
+				objectArgs.ImmOrOwnedObject = &sui_types.ObjectRef{
+					ObjectId: obj.Data.ObjectId,
+					Version:  obj.Data.Version.Uint64(),
+					Digest:   obj.Data.Digest,
+				}
+			} else {
+				objectArgs.SharedObject = &struct {
+					Id                   move_types.AccountAddress
+					InitialSharedVersion uint64
+					Mutable              bool
+				}{
+					Id:                   obj.Data.ObjectId,
+					InitialSharedVersion: *obj.Data.Owner.Shared.InitialSharedVersion,
+					Mutable:              mutable,
+				}
+			}
+
+			ret = append(ret, sui_types.CallArg{Object: &objectArgs})
 		}
 	}
 	return
+}
+
+func (cli *SuiClient) NewProgrammableTransactionMoveCall(ctx context.Context, builder *sui_types.ProgrammableTransactionBuilder, target string, args []interface{}) (*sui_types.Argument, error) {
+	functionArgs, err := cli.ParseFunctionArgs(ctx, target, args)
+	if err != nil {
+		return nil, fmt.Errorf("suiClient.ParseFunctionArgs %v", err)
+	}
+
+	var arguments []sui_types.Argument
+	for idx, functionArg := range functionArgs {
+		if functionArg.Object != nil {
+			argument, err := builder.Obj(*functionArg.Object)
+			if err != nil {
+				return nil, fmt.Errorf("givenArgs index: [%d], builder.Obj %v", idx, err)
+			}
+			arguments = append(arguments, argument)
+			continue
+		}
+
+		argument, err := builder.Pure(args[idx])
+		if err != nil {
+			return nil, fmt.Errorf("givenArgs index: [%d], builder.Pure %v", idx, err)
+		}
+		arguments = append(arguments, argument)
+	}
+
+	entry := strings.Split(target, "::")
+	if len(entry) != 3 {
+		return nil, fmt.Errorf("invalid target [%s]", target)
+	}
+	packageId, err := sui_types.NewAddressFromHex(entry[0])
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewAddressFromHex %v", err)
+	}
+
+	returnArgument := builder.Command(
+		sui_types.Command{
+			MoveCall: &sui_types.ProgrammableMoveCall{
+				Package:   *packageId,
+				Module:    move_types.Identifier(entry[1]),
+				Function:  move_types.Identifier(entry[2]),
+				Arguments: arguments,
+			},
+		},
+	)
+	return &returnArgument, nil
 }
