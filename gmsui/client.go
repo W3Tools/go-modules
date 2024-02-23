@@ -340,7 +340,7 @@ func (cli *SuiClient) ParseFunctionArgs(ctx context.Context, target string, args
 func (cli *SuiClient) NewProgrammableTransactionMoveCall(ctx context.Context, builder *sui_types.ProgrammableTransactionBuilder, target string, args []interface{}) (*sui_types.Argument, error) {
 	functionArgs, err := cli.ParseFunctionArgs(ctx, target, args)
 	if err != nil {
-		return nil, fmt.Errorf("suiClient.ParseFunctionArgs %v", err)
+		return nil, fmt.Errorf("cli.ParseFunctionArgs %v", err)
 	}
 
 	var arguments []sui_types.Argument
@@ -381,4 +381,66 @@ func (cli *SuiClient) NewProgrammableTransactionMoveCall(ctx context.Context, bu
 		},
 	)
 	return &returnArgument, nil
+}
+
+func (cli *SuiClient) ProgrammableTransactionFinishFromSigner(ctx context.Context, builder *sui_types.ProgrammableTransactionBuilder) ([]byte, error) {
+	if cli.SuiSigner == nil {
+		return nil, fmt.Errorf("invalid signer")
+	}
+
+	sender, err := sui_types.NewAddressFromHex(cli.SuiSigner.Signer.Address)
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewAddressFromHex %v", err)
+	}
+	gasObj, err := cli.GetObject(ctx, cli.SuiSigner.Gas.Live)
+	if err != nil {
+		return nil, fmt.Errorf("cli.GetObject %v", err)
+	}
+
+	gas := gasObj.Data.Reference()
+	transaction := sui_types.NewProgrammable(
+		*sender,
+		[]*sui_types.ObjectRef{
+			&gas,
+		},
+		builder.Finish(),
+		cli.GasBudget.Uint64(),
+		uint64(750),
+	)
+	bcsTransaction, err := bcs.Marshal(transaction)
+	if err != nil {
+		return nil, fmt.Errorf("bcs.Marshal %v", err)
+	}
+	return bcsTransaction, nil
+}
+
+func (cli *SuiClient) ProgrammableTransactionFinishFromMultisig(ctx context.Context, builder *sui_types.ProgrammableTransactionBuilder) ([]byte, error) {
+	if cli.MultiSig == nil {
+		return nil, fmt.Errorf("invalid multisig")
+	}
+
+	sender, err := sui_types.NewAddressFromHex(cli.MultiSig.Address)
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewAddressFromHex %v", err)
+	}
+	gasObj, err := cli.GetObject(ctx, cli.MultiSig.Gas.Live)
+	if err != nil {
+		return nil, fmt.Errorf("cli.GetObject %v", err)
+	}
+
+	gas := gasObj.Data.Reference()
+	transaction := sui_types.NewProgrammable(
+		*sender,
+		[]*sui_types.ObjectRef{
+			&gas,
+		},
+		builder.Finish(),
+		cli.GasBudget.Uint64(),
+		uint64(750),
+	)
+	bcsTransaction, err := bcs.Marshal(transaction)
+	if err != nil {
+		return nil, fmt.Errorf("bcs.Marshal %v", err)
+	}
+	return bcsTransaction, nil
 }

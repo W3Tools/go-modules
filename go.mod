@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-lambda-go v1.41.0
 	github.com/aws/aws-sdk-go v1.27.0
 	github.com/coming-chat/go-aptos v0.0.0-20221013022715-39f91035c785
-	github.com/coming-chat/go-sui/v2 v2.0.0
+	github.com/coming-chat/go-sui/v2 v2.0.1
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/everFinance/goar v1.4.5
 	github.com/fardream/go-bcs v0.2.1
