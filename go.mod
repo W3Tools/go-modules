@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/DeanThompson/ginpprof v0.0.0-20201112072838-007b1e56b2e1
-	github.com/W3Tools/go-sui-sdk/v2 v2.0.3
+	github.com/W3Tools/go-sui-sdk/v2 v2.0.4
 	github.com/aws/aws-lambda-go v1.41.0
 	github.com/aws/aws-sdk-go v1.27.0
 	github.com/coming-chat/go-aptos v0.0.0-20221013022715-39f91035c785
