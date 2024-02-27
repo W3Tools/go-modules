@@ -276,10 +276,11 @@ func (cli *SuiClient) ParseFunctionArgs(ctx context.Context, target string, args
 					return nil, fmt.Errorf("vector.Marshal %v", err)
 				}
 			case []*big.Int:
-				vector := VectorBigInt{Data: arg}
-				pureData, err = vector.Marshal()
-				if err != nil {
-					return nil, fmt.Errorf("vector.Marshal %v", err)
+				pureData = []byte{uint8(len(arg))}
+				for _, a := range arg {
+					thisData := make([]byte, 32)
+					binary.LittleEndian.PutUint64(thisData, a.Uint64())
+					pureData = append(pureData, thisData...)
 				}
 			case []string:
 				vector := VectorAddress{Data: arg}
@@ -354,6 +355,9 @@ func (cli *SuiClient) NewProgrammableTransactionMoveCall(ctx context.Context, bu
 		} else {
 			switch args[idx].(type) {
 			case *big.Int:
+				arguments = append(arguments, builder.PureBytes(*functionArg.Pure, false))
+				continue
+			case []*big.Int:
 				arguments = append(arguments, builder.PureBytes(*functionArg.Pure, false))
 				continue
 			default:
