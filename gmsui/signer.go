@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/W3Tools/go-sui-sdk/v2/account"
+	"github.com/W3Tools/go-sui-sdk/v2/lib"
+	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
 	"github.com/coming-chat/go-aptos/crypto/derivation"
-	"github.com/coming-chat/go-sui/v2/account"
-	"github.com/coming-chat/go-sui/v2/lib"
-	"github.com/coming-chat/go-sui/v2/sui_types"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/fardream/go-bcs/bcs"
 	"github.com/tyler-smith/go-bip39"

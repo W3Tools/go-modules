@@ -1,7 +1,7 @@
 package gmsui
 
 import (
-	"github.com/coming-chat/go-sui/v2/client"
+	"github.com/W3Tools/go-sui-sdk/v2/client"
 )
 
 type SuiNetwork = string

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/coming-chat/go-sui/v2/sui_types"
+	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
 	"github.com/fardream/go-bcs/bcs"
 )
 
@@ -25,7 +25,7 @@ type VectorU64 struct {
 }
 
 type VectorBigInt struct {
-	Data []big.Int
+	Data []*big.Int
 }
 
 type SuiAddress = string

@@ -3,15 +3,16 @@ package gmsui
 import (
 	"context"
 	"encoding/base64"
+	"encoding/binary"
 	"fmt"
 	"math/big"
 	"strings"
 
-	"github.com/coming-chat/go-sui/v2/client"
-	"github.com/coming-chat/go-sui/v2/lib"
-	"github.com/coming-chat/go-sui/v2/move_types"
-	"github.com/coming-chat/go-sui/v2/sui_types"
-	"github.com/coming-chat/go-sui/v2/types"
+	"github.com/W3Tools/go-sui-sdk/v2/client"
+	"github.com/W3Tools/go-sui-sdk/v2/lib"
+	"github.com/W3Tools/go-sui-sdk/v2/move_types"
+	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
+	"github.com/W3Tools/go-sui-sdk/v2/types"
 	"github.com/fardream/go-bcs/bcs"
 )
 
@@ -228,70 +229,68 @@ func (cli *SuiClient) ParseFunctionArgs(ctx context.Context, target string, args
 			if argType != "Pure" {
 				return nil, fmt.Errorf("unknown string type: %v", argType)
 			}
-
+			var pureData = []byte{}
 			switch arg := args[idx].(type) {
-			case uint8, uint16, uint32, uint64, big.Int:
-				bcsArg, err := bcs.Marshal(arg)
+			case uint8, uint16, uint32, uint64:
+				pureData, err = bcs.Marshal(arg)
 				if err != nil {
 					return nil, fmt.Errorf("givenArgs index: [%d], bcs.Marshal %v", idx, err)
 				}
-				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
+			case *big.Int:
+				pureData = make([]byte, 32)
+				binary.LittleEndian.PutUint64(pureData, arg.Uint64())
 			case string:
-				address, err := sui_types.NewAddressFromHex(arg)
-				if err != nil {
-					return nil, fmt.Errorf("sui_types.NewAddressFromHex %v", err)
+				var stringData any = arg
+				if strings.HasPrefix(arg, "0x") {
+					stringData, err = sui_types.NewAddressFromHex(arg)
+					if err != nil {
+						return nil, fmt.Errorf("sui_types.NewAddressFromHex %v", err)
+					}
 				}
-
-				bcsArg, err := bcs.Marshal(address)
+				pureData, err = bcs.Marshal(stringData)
 				if err != nil {
 					return nil, fmt.Errorf("givenArgs index: [%d], bcs.Marshal %v", idx, err)
 				}
-				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
 			case []uint8:
 				vector := VectorU8{Data: arg}
-				bcsArg, err := vector.Marshal()
+				pureData, err = vector.Marshal()
 				if err != nil {
 					return nil, fmt.Errorf("vector.Marshal %v", err)
 				}
-				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
 			case []uint16:
 				vector := VectorU16{Data: arg}
-				bcsArg, err := vector.Marshal()
+				pureData, err = vector.Marshal()
 				if err != nil {
 					return nil, fmt.Errorf("vector.Marshal %v", err)
 				}
-				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
 			case []uint32:
 				vector := VectorU32{Data: arg}
-				bcsArg, err := vector.Marshal()
+				pureData, err = vector.Marshal()
 				if err != nil {
 					return nil, fmt.Errorf("vector.Marshal %v", err)
 				}
-				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
 			case []uint64:
 				vector := VectorU64{Data: arg}
-				bcsArg, err := vector.Marshal()
+				pureData, err = vector.Marshal()
 				if err != nil {
 					return nil, fmt.Errorf("vector.Marshal %v", err)
 				}
-				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
-			case []big.Int:
+			case []*big.Int:
 				vector := VectorBigInt{Data: arg}
-				bcsArg, err := vector.Marshal()
+				pureData, err = vector.Marshal()
 				if err != nil {
 					return nil, fmt.Errorf("vector.Marshal %v", err)
 				}
-				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
 			case []string:
 				vector := VectorAddress{Data: arg}
-				bcsArg, err := vector.Marshal()
+				pureData, err = vector.Marshal()
 				if err != nil {
 					return nil, fmt.Errorf("vector.Marshal %v", err)
 				}
-				ret = append(ret, sui_types.CallArg{Pure: &bcsArg})
 			default:
 				return nil, fmt.Errorf("invalid givenArgs: %v, type: %T", args[idx], args[idx])
 			}
+			ret = append(ret, sui_types.CallArg{Pure: &pureData})
 		case map[string]interface{}:
 			objType, ok := argType["Object"]
 			if !ok {
@@ -352,13 +351,20 @@ func (cli *SuiClient) NewProgrammableTransactionMoveCall(ctx context.Context, bu
 			}
 			arguments = append(arguments, argument)
 			continue
+		} else {
+			switch args[idx].(type) {
+			case *big.Int:
+				arguments = append(arguments, builder.PureBytes(*functionArg.Pure, false))
+				continue
+			default:
+				argument, err := builder.Pure(args[idx])
+				if err != nil {
+					return nil, fmt.Errorf("givenArgs index: [%d], builder.Pure %v", idx, err)
+				}
+				arguments = append(arguments, argument)
+				continue
+			}
 		}
-
-		argument, err := builder.Pure(args[idx])
-		if err != nil {
-			return nil, fmt.Errorf("givenArgs index: [%d], builder.Pure %v", idx, err)
-		}
-		arguments = append(arguments, argument)
 	}
 
 	entry := strings.Split(target, "::")

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/coming-chat/go-sui/v2/client"
-	"github.com/coming-chat/go-sui/v2/sui_types"
+	"github.com/W3Tools/go-sui-sdk/v2/client"
+	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
 )
 
 func (cli *SuiClient) GetFunctionArgTypes(ctx context.Context, target string) (*[]interface{}, error) {
