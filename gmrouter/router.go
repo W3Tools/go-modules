@@ -107,7 +107,7 @@ func noRouteSet(ctx *gin.Context) {
 
 func methodNotAllowed(ctx *gin.Context) {
 	r := Router{Api: ctx}
-	r.ApiResponse(http.StatusMethodNotAllowed, "Method now allowed.")
+	r.ApiResponse(http.StatusMethodNotAllowed, "Method not allowed.")
 }
 
 func faviconIcon(ctx *gin.Context) {
