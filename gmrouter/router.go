@@ -16,6 +16,7 @@ type Router struct {
 }
 
 var routerEngine *gin.Engine
+var debugMode bool
 
 const (
 	readTimeout  = time.Second * 60
@@ -23,10 +24,11 @@ const (
 )
 
 func InitRouter(basePath string, debug bool) *gin.RouterGroup {
+	debugMode = debug
 	mode := gin.ReleaseMode
 	loggerHandler := func(*gin.Context) {}
 
-	if debug {
+	if debugMode {
 		mode = gin.DebugMode
 		loggerHandler = gin.Logger()
 	}
@@ -69,7 +71,9 @@ func RunningApi(host string, port int64) error {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	ginpprof.Wrap(routerEngine)
+	if debugMode {
+		ginpprof.Wrap(routerEngine)
+	}
 
 	fmt.Printf("service run at http://%s\n", address)
 
