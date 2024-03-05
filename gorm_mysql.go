@@ -37,7 +37,7 @@ func BeginGormTx() *gorm.DB {
 }
 
 func CommitGormTx(tx *gorm.DB) error {
-	if err := tx.Commit(); err != nil {
+	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("tx.Commit %v", err)
 	}
