@@ -35,3 +35,11 @@ func NewGormSession() *gorm.DB {
 func BeginGormTx() *gorm.DB {
 	return gormDB.Begin()
 }
+
+func CommitGormTx(tx *gorm.DB) error {
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("tx.Commit %v", err)
+	}
+	return nil
+}
