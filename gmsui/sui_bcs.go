@@ -5,7 +5,11 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math/big"
 	"reflect"
+	"slices"
+
+	"github.com/fardream/go-bcs/bcs"
 )
 
 func UnmarshalSuiBCS(data []byte, v any) error {
@@ -64,6 +68,11 @@ func (decoder *Decoder) decodePointer(v reflect.Value) error {
 		return decoder.decodeUint64(v)
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return decoder.decodeUint32(v)
+	}
+
+	switch v.Type() {
+	case reflect.ValueOf(new(bcs.Uint128)).Type():
+		return decoder.decodeUint128(v)
 	default:
 		return fmt.Errorf("invalid kind [%v], type [%v]", kind, v.Type())
 	}
@@ -126,6 +135,21 @@ func (decoder *Decoder) decodeUint64(v reflect.Value) error {
 		return err
 	}
 	v.SetUint(binary.LittleEndian.Uint64(data))
+
+	return nil
+}
+
+func (decoder *Decoder) decodeUint128(v reflect.Value) error {
+	data, err := decoder.ReadBytes(16)
+	if err != nil {
+		return err
+	}
+	slices.Reverse(data)
+	uint128, err := bcs.NewUint128FromBigInt(new(big.Int).SetBytes(data))
+	if err != nil {
+		return err
+	}
+	v.Set(reflect.ValueOf(uint128))
 
 	return nil
 }
