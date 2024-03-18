@@ -56,6 +56,8 @@ func (decoder *Decoder) decodePointer(v reflect.Value) error {
 	switch kind {
 	case reflect.Bool:
 		return decoder.decodeBool(v)
+	case reflect.Struct:
+		return decoder.decodeStruct(v)
 	case reflect.Slice:
 		return decoder.decodeSlice(v)
 	case reflect.Uint8:
@@ -73,9 +75,27 @@ func (decoder *Decoder) decodePointer(v reflect.Value) error {
 	switch v.Type() {
 	case reflect.ValueOf(new(gm.Uint128)).Type():
 		return decoder.decodeUint128(v)
+	case reflect.ValueOf(new(gm.Uint256)).Type():
+		return decoder.decodeUint256(v)
 	default:
 		return fmt.Errorf("invalid kind [%v], type [%v]", kind, v.Type())
 	}
+}
+
+func (decoder *Decoder) decodeStruct(v reflect.Value) error {
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		if !field.CanInterface() {
+			continue
+		}
+
+		innerData := reflect.New(field.Type())
+		if err := decoder.decode(innerData); err != nil {
+			return err
+		}
+		field.Set(innerData.Elem())
+	}
+	return nil
 }
 
 func (decoder *Decoder) decodeSlice(v reflect.Value) error {
@@ -150,6 +170,21 @@ func (decoder *Decoder) decodeUint128(v reflect.Value) error {
 		return err
 	}
 	v.Set(reflect.ValueOf(uint128))
+
+	return nil
+}
+
+func (decoder *Decoder) decodeUint256(v reflect.Value) error {
+	data, err := decoder.ReadBytes(16)
+	if err != nil {
+		return err
+	}
+	slices.Reverse(data)
+	uint256, err := gm.NewUint256FromBigInt(new(big.Int).SetBytes(data))
+	if err != nil {
+		return err
+	}
+	v.Set(reflect.ValueOf(uint256))
 
 	return nil
 }
