@@ -175,7 +175,7 @@ func (decoder *Decoder) decodeUint128(v reflect.Value) error {
 }
 
 func (decoder *Decoder) decodeUint256(v reflect.Value) error {
-	data, err := decoder.ReadBytes(16)
+	data, err := decoder.ReadBytes(32)
 	if err != nil {
 		return err
 	}
