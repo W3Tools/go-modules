@@ -5,20 +5,18 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"math/big"
 	"reflect"
-	"time"
 )
 
-func Unmarshal(data []byte, v any) error {
-	return NewDecoder(bytes.NewReader(data)).Decode(v)
+func UnmarshalSuiBCS(data []byte, v any) error {
+	return NewSuiBCSDecoder(bytes.NewReader(data)).Decode(v)
 }
 
 type Decoder struct {
 	reader io.Reader
 }
 
-func NewDecoder(reader io.Reader) *Decoder {
+func NewSuiBCSDecoder(reader io.Reader) *Decoder {
 	return &Decoder{reader: reader}
 }
 
@@ -40,7 +38,7 @@ func (decoder *Decoder) decode(v reflect.Value) error {
 	case reflect.Pointer:
 		return decoder.decodePointer(v.Elem())
 	default:
-		return decoder.decodePointer(v.Elem())
+		return decoder.decodePointer(v)
 	}
 }
 
@@ -56,69 +54,86 @@ func (decoder *Decoder) decodePointer(v reflect.Value) error {
 		return decoder.decodeBool(v)
 	case reflect.Slice:
 		return decoder.decodeSlice(v)
-	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, // ints
-		reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return decoder.decodeUint(v)
+	case reflect.Uint8:
+		return decoder.decodeUint8(v)
+	case reflect.Uint16:
+		return decoder.decodeUint16(v)
+	case reflect.Uint32:
+		return decoder.decodeUint32(v)
+	case reflect.Uint64:
+		return decoder.decodeUint64(v)
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return decoder.decodeUint32(v)
 	default:
-		bigInt := reflect.ValueOf(big.NewInt(0)).Type()
-
-		switch v.Type() {
-		case bigInt:
-			return decoder.decodeBigInt(v)
-		case reflect.ValueOf(time.Now()).Type():
-			return decoder.decodeTime(v)
-		}
-
 		return fmt.Errorf("invalid kind [%v], type [%v]", kind, v.Type())
 	}
 }
 
 func (decoder *Decoder) decodeSlice(v reflect.Value) error {
-	data, err := io.ReadAll(decoder.reader)
+	markSize, err := decoder.ReadBytes(1)
 	if err != nil {
-		return fmt.Errorf("io.ReadAll %v", err)
+		return err
 	}
-
-	size := int(data[0])
-	data = data[1:]
-	length := len(data) / size
-	if length*size != len(data) {
-		return fmt.Errorf("invalid data length")
-	}
-
-	valueType := v.Type()
-	tmp := reflect.MakeSlice(valueType, 0, size)
+	size := int(markSize[0])
+	t := v.Type()
+	tmp := reflect.MakeSlice(t, 0, size)
 	for i := 0; i < size; i++ {
-		ind := reflect.New(valueType.Elem())
-		innerData := data[i*length : (i+1)*length]
-		decoder.reader = bytes.NewReader(innerData)
-		if err := decoder.decode(ind); err != nil {
+		innerData := reflect.New(t.Elem())
+		if err := decoder.decode(innerData); err != nil {
 			return err
 		}
-
-		tmp = reflect.Append(tmp, ind.Elem())
+		tmp = reflect.Append(tmp, innerData.Elem())
 	}
+
 	v.Set(tmp)
+
 	return nil
 }
 
-func (decoder *Decoder) decodeUint(v reflect.Value) error {
-	data, err := io.ReadAll(decoder.reader)
+func (decoder *Decoder) decodeUint8(v reflect.Value) error {
+	data, err := decoder.ReadBytes(1)
 	if err != nil {
-		return fmt.Errorf("io.ReadAll %v", err)
+		return err
 	}
+	v.SetUint(uint64(data[0]))
 
+	return nil
+}
+
+func (decoder *Decoder) decodeUint16(v reflect.Value) error {
+	data, err := decoder.ReadBytes(2)
+	if err != nil {
+		return err
+	}
 	v.SetUint(uint64(binary.LittleEndian.Uint16(data)))
+
+	return nil
+}
+
+func (decoder *Decoder) decodeUint32(v reflect.Value) error {
+	data, err := decoder.ReadBytes(4)
+	if err != nil {
+		return err
+	}
+	v.SetUint(uint64(binary.LittleEndian.Uint32(data)))
+
+	return nil
+}
+
+func (decoder *Decoder) decodeUint64(v reflect.Value) error {
+	data, err := decoder.ReadBytes(8)
+	if err != nil {
+		return err
+	}
+	v.SetUint(binary.LittleEndian.Uint64(data))
+
 	return nil
 }
 
 func (decoder *Decoder) decodeBool(v reflect.Value) error {
-	data, err := io.ReadAll(decoder.reader)
+	data, err := decoder.ReadBytes(1)
 	if err != nil {
-		return fmt.Errorf("io.ReadAll %v", err)
-	}
-	if len(data) != 1 {
-		return fmt.Errorf("invalid bool type")
+		return err
 	}
 
 	if data[0] == 0 {
@@ -129,29 +144,22 @@ func (decoder *Decoder) decodeBool(v reflect.Value) error {
 	return nil
 }
 
-func (decoder *Decoder) decodeBigInt(v reflect.Value) error {
-	data, err := io.ReadAll(decoder.reader)
+func (decoder *Decoder) ReadBytes(len int) ([]byte, error) {
+	b := make([]byte, len)
+	n, err := decoder.reader.Read(b)
 	if err != nil {
-		return fmt.Errorf("io.ReadAll %v", err)
+		return nil, err
 	}
-
-	switch len(data) {
-	case 16:
-		b := new(big.Int).SetUint64(binary.LittleEndian.Uint64(data))
-		v.Set(reflect.ValueOf(b))
-		return nil
-	default:
-		return fmt.Errorf("invalid data length: [%v]", len(data))
+	if n == 0 {
+		return nil, fmt.Errorf("EOF")
 	}
+	return b, nil
 }
 
-func (decoder *Decoder) decodeTime(v reflect.Value) error {
-	data, err := io.ReadAll(decoder.reader)
+func (decoder *Decoder) ReadByte() (byte, error) {
+	b, err := decoder.ReadBytes(1)
 	if err != nil {
-		return fmt.Errorf("io.ReadAll %v", err)
+		return 0, err
 	}
-	fmt.Printf("len: %v\n", len(data))
-	t := time.UnixMilli(int64(binary.LittleEndian.Uint64(data)))
-	v.Set(reflect.ValueOf(t))
-	return nil
+	return b[0], nil
 }
