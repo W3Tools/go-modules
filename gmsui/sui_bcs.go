@@ -68,6 +68,8 @@ func (decoder *Decoder) decodePointer(v reflect.Value) error {
 		return decoder.decodeUint32(v)
 	case reflect.Uint64:
 		return decoder.decodeUint64(v)
+	case reflect.String:
+		return decoder.decodeString(v)
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return decoder.decodeUint32(v)
 	}
@@ -115,6 +117,23 @@ func (decoder *Decoder) decodeSlice(v reflect.Value) error {
 	}
 
 	v.Set(tmp)
+
+	return nil
+}
+
+func (decoder *Decoder) decodeString(v reflect.Value) error {
+	size, err := decoder.ReadByte()
+	if err != nil {
+		return err
+	}
+	data, err := decoder.ReadBytes(int(size))
+	if err != nil {
+		return err
+	}
+
+	fullData := new(bytes.Buffer)
+	fullData.Write(data)
+	v.SetString(fullData.String())
 
 	return nil
 }
