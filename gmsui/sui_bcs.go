@@ -101,11 +101,11 @@ func (decoder *Decoder) decodeStruct(v reflect.Value) error {
 }
 
 func (decoder *Decoder) decodeSlice(v reflect.Value) error {
-	markSize, err := decoder.ReadBytes(1)
+	size, _, err := gm.ULEB128Decode[int](decoder.reader)
 	if err != nil {
 		return err
 	}
-	size := int(markSize[0])
+
 	t := v.Type()
 	tmp := reflect.MakeSlice(t, 0, size)
 	for i := 0; i < size; i++ {
