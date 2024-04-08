@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/W3Tools/go-bcs/bcs"
 	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
-	"github.com/fardream/go-bcs/bcs"
 )
 
 type VectorU8 struct {

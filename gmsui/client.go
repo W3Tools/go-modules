@@ -8,12 +8,12 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/W3Tools/go-bcs/bcs"
 	"github.com/W3Tools/go-sui-sdk/v2/client"
 	"github.com/W3Tools/go-sui-sdk/v2/lib"
 	"github.com/W3Tools/go-sui-sdk/v2/move_types"
 	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
 	"github.com/W3Tools/go-sui-sdk/v2/types"
-	"github.com/fardream/go-bcs/bcs"
 )
 
 type SuiClient struct {

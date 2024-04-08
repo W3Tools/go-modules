@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/W3Tools/go-bcs/bcs"
 	"golang.org/x/crypto/blake2b"
 )
 
