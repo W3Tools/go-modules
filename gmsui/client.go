@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/W3Tools/go-bcs/bcs"
+	gm "github.com/W3Tools/go-modules"
 	"github.com/W3Tools/go-sui-sdk/v2/client"
 	"github.com/W3Tools/go-sui-sdk/v2/lib"
 	"github.com/W3Tools/go-sui-sdk/v2/move_types"
@@ -145,6 +146,26 @@ func (cli *SuiClient) GetObject(ctx context.Context, objectId string) (*types.Su
 	}
 
 	return cli.Provider.GetObject(ctx, *_objectId, &types.SuiObjectDataOptions{
+		ShowType:                true,
+		ShowContent:             true,
+		ShowBcs:                 true,
+		ShowOwner:               true,
+		ShowPreviousTransaction: true,
+		ShowStorageRebate:       true,
+		ShowDisplay:             true,
+	})
+}
+
+func (cli *SuiClient) GetObjects(ctx context.Context, objectIds []string) ([]types.SuiObjectResponse, error) {
+	ids, err := gm.Map(objectIds, func(v string) (move_types.AccountAddress, error) {
+		hex, err := sui_types.NewObjectIdFromHex(v)
+		return *hex, err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex %v", err)
+	}
+
+	return cli.Provider.MultiGetObjects(ctx, ids, &types.SuiObjectDataOptions{
 		ShowType:                true,
 		ShowContent:             true,
 		ShowBcs:                 true,
