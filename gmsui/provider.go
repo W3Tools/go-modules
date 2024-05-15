@@ -1,7 +1,7 @@
 package gmsui
 
 import (
-	"github.com/W3Tools/go-sui-sdk/v2/client"
+	sdk_client "github.com/W3Tools/go-sui-sdk/v2/client"
 )
 
 type SuiNetwork = string
@@ -13,7 +13,7 @@ var (
 )
 
 // Create New Provider
-func NewSuiProviderFromNetwork(network SuiNetwork) (*client.Client, error) {
+func NewSuiProviderFromNetwork(network SuiNetwork) (*sdk_client.Client, error) {
 	switch network {
 	case "mainnet":
 		return NewSuiProvider(MainnetFullNode)
@@ -26,6 +26,6 @@ func NewSuiProviderFromNetwork(network SuiNetwork) (*client.Client, error) {
 	}
 }
 
-func NewSuiProvider(rpc string) (*client.Client, error) {
-	return client.Dial(rpc)
+func NewSuiProvider(rpc string) (*sdk_client.Client, error) {
+	return sdk_client.Dial(rpc)
 }
