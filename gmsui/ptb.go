@@ -203,7 +203,7 @@ func (ptb *ProgrammableTransactionBlock) FinishFromSigner() ([]byte, error) {
 	if ptb.client.SuiSigner == nil {
 		return nil, fmt.Errorf("finish ptb from signer failed, invalid signer")
 	}
-	return ptb.Finish(ptb.client.SuiSigner.Signer.Address, ptb.client.SuiSigner.Gas.Live, ptb.client.GasBudget.Uint64(), 751)
+	return ptb.Finish(ptb.client.SuiSigner.Signer.Address, &ptb.client.SuiSigner.Gas.Live, ptb.client.GasBudget.Uint64(), 751)
 }
 
 func (ptb *ProgrammableTransactionBlock) FinishFromMultisig() ([]byte, error) {
@@ -211,23 +211,36 @@ func (ptb *ProgrammableTransactionBlock) FinishFromMultisig() ([]byte, error) {
 		return nil, fmt.Errorf("finish ptb from multisig failed, invalid multisig")
 	}
 
-	return ptb.Finish(ptb.client.MultiSig.Address, ptb.client.MultiSig.Gas.Live, ptb.client.GasBudget.Uint64(), 751)
+	return ptb.Finish(ptb.client.MultiSig.Address, &ptb.client.MultiSig.Gas.Live, ptb.client.GasBudget.Uint64(), 751)
 }
 
-func (ptb *ProgrammableTransactionBlock) Finish(sender, gasObject string, gasBudget, gasPrice uint64) ([]byte, error) {
+func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string, gasBudget, gasPrice uint64) ([]byte, error) {
 	hexSender, err := sui_types.NewAddressFromHex(sender)
 	if err != nil {
 		return nil, fmt.Errorf("finish ptb failed, %s can not convert to address hex %v", sender, err)
 	}
-	gasObjectId, err := ptb.client.GetObject(gasObject)
-	if err != nil {
-		return nil, fmt.Errorf("finish ptb failed, get object %v", err)
+
+	gasPayment := []*sui_types.ObjectRef{}
+	if gasObject == nil {
+		coins, err := ptb.client.GetCoins(sender, SuiGasCoinType, nil)
+		if err != nil {
+			return nil, fmt.Errorf("finish ptb failed, get coins %v", err)
+		}
+		for _, coin := range coins.Data {
+			gasPayment = append(gasPayment, coin.Reference())
+		}
+	} else {
+		gasObjectId, err := ptb.client.GetObject(*gasObject)
+		if err != nil {
+			return nil, fmt.Errorf("finish ptb failed, get object %v", err)
+		}
+		gasReference := gasObjectId.Data.Reference()
+		gasPayment = append(gasPayment, &gasReference)
 	}
 
-	gasReference := gasObjectId.Data.Reference()
 	tx := sui_types.NewProgrammable(
 		*hexSender,
-		[]*sui_types.ObjectRef{&gasReference},
+		gasPayment,
 		ptb.builder.Finish(),
 		gasBudget,
 		gasPrice,
