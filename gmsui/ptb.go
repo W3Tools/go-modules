@@ -61,7 +61,7 @@ func (ptb *ProgrammableTransactionBlock) NewMoveCall(target string, args []inter
 
 // txContext should be nil
 func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, args []interface{}) (arguments []sui_types.Argument, err error) {
-	functionArgumentTypes, err := ptb.client.GetFunctionArgumentTypes(ptb.ctx, target)
+	functionArgumentTypes, err := ptb.client.GetFunctionArgumentTypes(target)
 	if err != nil {
 		return nil, fmt.Errorf("get function argument types failed %v", err)
 	}
@@ -108,7 +108,7 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 			if inputArgument == nil {
 				continue
 			}
-			objectInfo, err := ptb.client.GetObject(ptb.ctx, inputArgument.(string))
+			objectInfo, err := ptb.client.GetObject(inputArgument.(string))
 			if err != nil {
 				return nil, fmt.Errorf("get object %s failed %v", inputArgument, err)
 			}
@@ -139,7 +139,7 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 			if inputArgument == nil {
 				continue
 			}
-			objectInfo, err := ptb.client.GetObject(ptb.ctx, inputArgument.(string))
+			objectInfo, err := ptb.client.GetObject(inputArgument.(string))
 			if err != nil {
 				return nil, fmt.Errorf("get object %s failed %v", inputArgument, err)
 			}
@@ -219,7 +219,7 @@ func (ptb *ProgrammableTransactionBlock) Finish(sender, gasObject string, gasBud
 	if err != nil {
 		return nil, fmt.Errorf("finish ptb failed, %s can not convert to address hex %v", sender, err)
 	}
-	gasObjectId, err := ptb.client.GetObject(ptb.ctx, gasObject)
+	gasObjectId, err := ptb.client.GetObject(gasObject)
 	if err != nil {
 		return nil, fmt.Errorf("finish ptb failed, get object %v", err)
 	}
@@ -237,4 +237,12 @@ func (ptb *ProgrammableTransactionBlock) Finish(sender, gasObject string, gasBud
 
 func (ptb *ProgrammableTransactionBlock) Builder() *sui_types.ProgrammableTransactionBuilder {
 	return ptb.builder
+}
+
+func (ptb *ProgrammableTransactionBlock) Client() *SuiClient {
+	return ptb.client
+}
+
+func (ptb *ProgrammableTransactionBlock) Context() context.Context {
+	return ptb.ctx
 }

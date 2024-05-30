@@ -37,7 +37,7 @@ func (cli *SuiClient) AutoUpdateGas(owner string, gas *SuiGasObject) {
 
 func (cli *SuiClient) updateGas(owner string, gas *SuiGasObject) error {
 	coinType := "0x2::sui::SUI"
-	coins, err := cli.GetAllCoins(context.Background(), owner, coinType)
+	coins, err := cli.GetAllCoins(owner, coinType)
 	if err != nil {
 		return err
 	}
@@ -60,8 +60,8 @@ func (cli *SuiClient) updateGas(owner string, gas *SuiGasObject) error {
 }
 
 // Instance Get All Sui Coins
-func (cli *SuiClient) GetAllCoins(ctx context.Context, owner string, coinType string) (data []types.Coin, err error) {
-	firstPage, err := cli.GetCoins(ctx, owner, coinType, nil)
+func (client *SuiClient) GetAllCoins(owner string, coinType string) (data []types.Coin, err error) {
+	firstPage, err := client.GetCoins(owner, coinType, nil)
 	if err != nil {
 		return
 	}
@@ -70,7 +70,7 @@ func (cli *SuiClient) GetAllCoins(ctx context.Context, owner string, coinType st
 	nextCursor := firstPage.NextCursor
 	hasNext := firstPage.HasNextPage
 	for hasNext {
-		nextPage, err := cli.GetCoins(ctx, owner, coinType, nextCursor)
+		nextPage, err := client.GetCoins(owner, coinType, nextCursor)
 		if err != nil {
 			break
 		}
@@ -82,14 +82,14 @@ func (cli *SuiClient) GetAllCoins(ctx context.Context, owner string, coinType st
 	return
 }
 
-func (cli *SuiClient) GetCoins(ctx context.Context, owner, coinType string, nextCursor *move_types.AccountAddress) (ret *types.Page[types.Coin, move_types.AccountAddress], err error) {
+func (client *SuiClient) GetCoins(owner, coinType string, nextCursor *move_types.AccountAddress) (ret *types.Page[types.Coin, move_types.AccountAddress], err error) {
 	ownerAddress, err := sui_types.NewAddressFromHex(owner)
 	if err != nil {
 		return nil, err
 	}
 
-	return cli.Provider.GetCoins(
-		ctx,
+	return client.Provider.GetCoins(
+		client.ctx,
 		*ownerAddress,
 		&coinType,
 		nextCursor,
@@ -97,8 +97,8 @@ func (cli *SuiClient) GetCoins(ctx context.Context, owner, coinType string, next
 	)
 }
 
-func (cli *SuiClient) GetMaxCoinObject(ctx context.Context, address, coinType string) (*types.Coin, error) {
-	coins, err := cli.GetAllCoins(ctx, address, coinType)
+func (cli *SuiClient) GetMaxCoinObject(address, coinType string) (*types.Coin, error) {
+	coins, err := cli.GetAllCoins(address, coinType)
 	if err != nil {
 		return nil, fmt.Errorf("p.SuiClient.GetAllSuiCoins %v", err)
 	}

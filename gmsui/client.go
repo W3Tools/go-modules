@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/W3Tools/go-bcs/bcs"
-	gm "github.com/W3Tools/go-modules"
 	sdk_client "github.com/W3Tools/go-sui-sdk/v2/client"
 	"github.com/W3Tools/go-sui-sdk/v2/lib"
 	"github.com/W3Tools/go-sui-sdk/v2/move_types"
@@ -17,6 +16,7 @@ import (
 )
 
 type SuiClient struct {
+	ctx       context.Context
 	Provider  *sdk_client.Client
 	SuiSigner *SuiSigner
 	MultiSig  *SuiMultiSig
@@ -29,21 +29,25 @@ type SuiGasObject struct {
 }
 
 // Create New Sui Client
-func InitSuiClient(suiApi *sdk_client.Client) *SuiClient {
+func InitClient(ctx context.Context, suiApi *sdk_client.Client) *SuiClient {
 	return &SuiClient{
 		Provider:  suiApi,
 		GasBudget: big.NewInt(400000000),
 	}
 }
 
-func (client *SuiClient) NewSuiSigner(signer *SuiSigner) {
+func (client *SuiClient) Context() context.Context {
+	return client.ctx
+}
+
+func (client *SuiClient) NewSigner(signer *SuiSigner) {
 	if client.SuiSigner == nil {
 		client.SuiSigner = signer
 	}
 	client.updateGas(client.SuiSigner.Signer.Address, client.SuiSigner.Gas)
 }
 
-func (client *SuiClient) NewSuiMultiSig(multisig *SuiMultiSig) {
+func (client *SuiClient) NewMultiSig(multisig *SuiMultiSig) {
 	if client.MultiSig == nil {
 		client.MultiSig = multisig
 	}
@@ -52,11 +56,11 @@ func (client *SuiClient) NewSuiMultiSig(multisig *SuiMultiSig) {
 }
 
 // Tools
-func (client *SuiClient) SetSignerDefaultGasObject(obj string) {
+func (client *SuiClient) SetDefaultGasObjectToSigner(obj string) {
 	client.SuiSigner.Gas.Live = obj
 }
 
-func (client *SuiClient) SetMultiSigDefaultGasObject(obj string) {
+func (client *SuiClient) SetDefaultGasObjectToMultiSig(obj string) {
 	client.MultiSig.Gas.Live = obj
 }
 
@@ -73,7 +77,7 @@ func (client *SuiClient) SetDefaultGasBudget(budget *big.Int) {
 }
 
 // Instance: Move Call
-func (client *SuiClient) NewMoveCall(ctx context.Context, signer, gas, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
+func (client *SuiClient) NewMoveCall(signer, gas, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
 	entry := strings.Split(target, "::")
 	if len(entry) != 3 {
 		return nil, fmt.Errorf("invalid target [%s]", target)
@@ -96,24 +100,24 @@ func (client *SuiClient) NewMoveCall(ctx context.Context, signer, gas, target st
 
 	gasBudget := types.NewSafeSuiBigInt[uint64](client.GasBudget.Uint64())
 
-	return client.Provider.MoveCall(ctx, *_signer, *packageId, entry[1], entry[2], typeArgs, args, _gas, gasBudget)
+	return client.Provider.MoveCall(client.ctx, *_signer, *packageId, entry[1], entry[2], typeArgs, args, _gas, gasBudget)
 }
 
-func (client *SuiClient) NewMoveCallFromSigner(ctx context.Context, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
-	return client.NewMoveCall(ctx, client.SuiSigner.Signer.Address, client.SuiSigner.Gas.Live, target, args, typeArgs)
+func (client *SuiClient) NewMoveCallFromSigner(target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
+	return client.NewMoveCall(client.SuiSigner.Signer.Address, client.SuiSigner.Gas.Live, target, args, typeArgs)
 }
 
-func (client *SuiClient) NewMoveCallFromMultiSig(ctx context.Context, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
-	return client.NewMoveCall(ctx, client.MultiSig.Address, client.MultiSig.Gas.Live, target, args, typeArgs)
+func (client *SuiClient) NewMoveCallFromMultiSig(target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
+	return client.NewMoveCall(client.MultiSig.Address, client.MultiSig.Gas.Live, target, args, typeArgs)
 }
 
-func (client *SuiClient) ExecuteTransaction(ctx context.Context, b64TxBytes string, signatures []any) (*types.SuiTransactionBlockResponse, error) {
+func (client *SuiClient) ExecuteTransaction(b64TxBytes string, signatures []any) (*types.SuiTransactionBlockResponse, error) {
 	data, err := lib.NewBase64Data(b64TxBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.Provider.ExecuteTransactionBlock(ctx, *data, signatures, &types.SuiTransactionBlockResponseOptions{
+	return client.Provider.ExecuteTransactionBlock(client.ctx, *data, signatures, &types.SuiTransactionBlockResponseOptions{
 		ShowInput:          true,
 		ShowEffects:        true,
 		ShowEvents:         true,
@@ -123,8 +127,8 @@ func (client *SuiClient) ExecuteTransaction(ctx context.Context, b64TxBytes stri
 	)
 }
 
-func (client *SuiClient) MoveCallFromSigner(ctx context.Context, target string, args []interface{}, typeArgs []string) (result *types.SuiTransactionBlockResponse, err error) {
-	metadata, err := client.NewMoveCall(ctx, client.SuiSigner.Signer.Address, client.SuiSigner.Gas.Live, target, args, typeArgs)
+func (client *SuiClient) MoveCallFromSigner(target string, args []interface{}, typeArgs []string) (result *types.SuiTransactionBlockResponse, err error) {
+	metadata, err := client.NewMoveCall(client.SuiSigner.Signer.Address, client.SuiSigner.Gas.Live, target, args, typeArgs)
 	if err != nil {
 		return nil, fmt.Errorf("moveCall err %v", err)
 	}
@@ -134,47 +138,10 @@ func (client *SuiClient) MoveCallFromSigner(ctx context.Context, target string, 
 		return nil, fmt.Errorf("client.SuiSigner.SignTransaction %v", err)
 	}
 
-	return client.ExecuteTransaction(ctx, metadata.TxBytes.String(), []any{signature.Signature})
+	return client.ExecuteTransaction(metadata.TxBytes.String(), []any{signature.Signature})
 }
 
-func (client *SuiClient) GetObject(ctx context.Context, objectId string) (*types.SuiObjectResponse, error) {
-	_objectId, err := sui_types.NewObjectIdFromHex(objectId)
-	if err != nil {
-		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex %v", err)
-	}
-
-	return client.Provider.GetObject(ctx, *_objectId, &types.SuiObjectDataOptions{
-		ShowType:                true,
-		ShowContent:             true,
-		ShowBcs:                 true,
-		ShowOwner:               true,
-		ShowPreviousTransaction: true,
-		ShowStorageRebate:       true,
-		ShowDisplay:             true,
-	})
-}
-
-func (client *SuiClient) GetObjects(ctx context.Context, objectIds []string) ([]types.SuiObjectResponse, error) {
-	ids, err := gm.Map(objectIds, func(v string) (move_types.AccountAddress, error) {
-		hex, err := sui_types.NewObjectIdFromHex(v)
-		return *hex, err
-	})
-	if err != nil {
-		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex %v", err)
-	}
-
-	return client.Provider.MultiGetObjects(ctx, ids, &types.SuiObjectDataOptions{
-		ShowType:                true,
-		ShowContent:             true,
-		ShowBcs:                 true,
-		ShowOwner:               true,
-		ShowPreviousTransaction: true,
-		ShowStorageRebate:       true,
-		ShowDisplay:             true,
-	})
-}
-
-func (client *SuiClient) ImplementationOfDevInspect(ctx context.Context, txBytes string) (*types.DevInspectResults, error) {
+func (client *SuiClient) ImplementationOfDevInspect(txBytes string) (*types.DevInspectResults, error) {
 	var accountObj *move_types.AccountAddress
 	accountObj, err := sui_types.NewAddressFromHex("0x0000000000000000000000000000000000000000000000000000000000000000")
 	if err != nil {
@@ -186,11 +153,11 @@ func (client *SuiClient) ImplementationOfDevInspect(ctx context.Context, txBytes
 		return nil, fmt.Errorf("lib.NewBase64Data %v", err)
 	}
 
-	return client.Provider.DevInspectTransactionBlock(ctx, *accountObj, *txb, nil, nil)
+	return client.Provider.DevInspectTransactionBlock(client.ctx, *accountObj, *txb, nil, nil)
 }
 
-func (client *SuiClient) DevInspect(ctx context.Context, target string, args []interface{}, typeArgs []string) (*types.DevInspectResults, error) {
-	ptb := client.NewProgrammableTransactionBlock(ctx)
+func (client *SuiClient) DevInspect(target string, args []interface{}, typeArgs []string) (*types.DevInspectResults, error) {
+	ptb := client.NewProgrammableTransactionBlock(client.ctx)
 	_, err := ptb.NewMoveCall(target, args, typeArgs)
 	if err != nil {
 		return nil, fmt.Errorf("new move call failed %v", err)
@@ -202,5 +169,5 @@ func (client *SuiClient) DevInspect(ctx context.Context, target string, args []i
 		return nil, fmt.Errorf("dev inspect failed, bcs marshal %v", err)
 	}
 	txBytes := append([]byte{0}, bcsBytes...)
-	return client.ImplementationOfDevInspect(ctx, base64.StdEncoding.EncodeToString(txBytes))
+	return client.ImplementationOfDevInspect(base64.StdEncoding.EncodeToString(txBytes))
 }
