@@ -31,6 +31,7 @@ type SuiGasObject struct {
 // Create New Sui Client
 func InitClient(ctx context.Context, suiApi *sdk_client.Client) *SuiClient {
 	return &SuiClient{
+		ctx:       ctx,
 		Provider:  suiApi,
 		GasBudget: big.NewInt(400000000),
 	}
