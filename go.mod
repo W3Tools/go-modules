@@ -5,7 +5,7 @@ go 1.22.1
 require (
 	github.com/DeanThompson/ginpprof v0.0.0-20201112072838-007b1e56b2e1
 	github.com/W3Tools/go-bcs v1.0.1
-	github.com/W3Tools/go-sui-sdk/v2 v2.1.1
+	github.com/W3Tools/go-sui-sdk/v2 v2.1.2
 	github.com/aws/aws-lambda-go v1.46.0
 	github.com/aws/aws-sdk-go v1.50.31
 	github.com/coming-chat/go-aptos v0.0.0-20221013022715-39f91035c785
