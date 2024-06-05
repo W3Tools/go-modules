@@ -63,6 +63,30 @@ func HashArrayToArrays[T any](input []T, count int) [][]T {
 	return result
 }
 
+/*
+Calls a defined callback function on each element of an array, and returns an array that contains the results.
+
+	func StringArrayToNumberArray() {
+		var stringArray []string = []string{"1", "2", "3"}
+
+		numberArray, err := Map(stringArray, func(s string) (int64, error) {
+			return strconv.ParseInt(s, 10, 64)
+		})
+		if err != nil {
+			fmt.Println("string array to number array error, msg: ", err)
+			return
+		}
+		fmt.Println(numberArray)
+	}
+
+	func CalculateSquareValue() {
+		var numArray []int64 = []int64{2, 3, 4}
+		squareArray, _ := Map(numArray, func(n int64) (int64, error) {
+			return (n * n), nil
+		})
+		fmt.Println(squareArray)
+	}
+*/
 func Map[T any, T2 any](s []T, fn func(t T) (T2, error)) (t2 []T2, err error) {
 	for i := range s {
 		v, err := fn(s[i])
@@ -72,4 +96,27 @@ func Map[T any, T2 any](s []T, fn func(t T) (T2, error)) (t2 []T2, err error) {
 		t2 = append(t2, v)
 	}
 	return
+}
+
+/*
+Returns the first element that meet the condition specified in a callback function.
+*/
+func FilterOne[T any](s []T, fn func(T) bool) (t T) {
+	for i := range s {
+		if fn(s[i]) {
+			return s[i]
+		}
+	}
+	return
+}
+
+/*
+Cut off the beginning and end of the string and add ellipsis at both ends to truncate the string
+*/
+func TruncateString(v string, start, end int) string {
+	if len(v) < start+end {
+		return v
+	}
+
+	return fmt.Sprintf("%s...%s", v[:start], v[len(v)-end:])
 }

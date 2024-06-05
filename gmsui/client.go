@@ -172,3 +172,14 @@ func (client *SuiClient) DevInspect(target string, args []interface{}, typeArgs 
 	txBytes := append([]byte{0}, bcsBytes...)
 	return client.ImplementationOfDevInspect(base64.StdEncoding.EncodeToString(txBytes))
 }
+
+func ParseDevInspectReturnValue(v interface{}) []byte {
+	returnValues := v.([]any)
+	values := returnValues[0].([]interface{})
+	bs := make([]byte, 0)
+	for _, i := range values {
+		float64Value := i.(float64)
+		bs = append(bs, uint8(float64Value))
+	}
+	return bs
+}
