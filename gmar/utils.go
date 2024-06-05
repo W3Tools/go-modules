@@ -15,7 +15,7 @@ func (a *ArweaveClient) GetBalance() (arAmount *big.Float, err error) {
 }
 
 func (a *ArweaveClient) GetTxPrice(data []byte) (int64, error) {
-	return a.Client.GetTransactionPrice(data, nil)
+	return a.Client.GetTransactionPrice(len(data), nil)
 }
 
 func (a *ArweaveClient) GetTransaction(data []byte, manifest bool) (*types.Transaction, error) {
