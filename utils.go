@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 )
 
 func ReadFileBytes(filePath string) ([]byte, error) {
@@ -119,4 +120,14 @@ func TruncateString(v string, start, end int) string {
 	}
 
 	return fmt.Sprintf("%s...%s", v[:start], v[len(v)-end:])
+}
+
+/*
+Only add the element if it is not already in the slice
+*/
+func UniqueAppend[S ~[]E, E comparable](s S, v E) S {
+	if !slices.Contains(s, v) {
+		s = append(s, v)
+	}
+	return s
 }
