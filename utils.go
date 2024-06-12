@@ -30,6 +30,28 @@ func ReadFileBytes(filePath string) ([]byte, error) {
 	return buffer, nil
 }
 
+/*
+Get the hash value of the file
+The effect is equivalent to the command line sha256sum
+
+	fileBytes, err := gm.ReadFileBytes("example.go")
+	if err != nil {
+		fmt.Printf("read file bytes err, msg: %v\n", err)
+		return
+	}
+
+	hash, err := gm.ReadFileHash(fileBytes)
+	if err != nil {
+		fmt.Printf("read file hash err, msg: %v\n", err)
+		return
+	}
+	fmt.Printf("hash: %v\n", hash)
+
+	-----------------------------------------------------
+	FILE_HASH=$(sha256sum example.go)
+
+	hash == FILE_HASH
+*/
 func ReadFileHash(data []byte) (string, error) {
 	reader := bytes.NewReader(data)
 	hash := sha256.New()
@@ -41,6 +63,15 @@ func ReadFileHash(data []byte) (string, error) {
 	return fmt.Sprintf("%x", sum), nil
 }
 
+/*
+Hash an array into a nested array
+
+	numArray := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	splitArray := gm.HashArrayToArrays(numArray, 3)
+	fmt.Printf("new array: %v\n", splitArray)
+
+	Output: [[1 4 7 9] [2 5 10] [3 6 8]]
+*/
 func HashArrayToArrays[T any](input []T, count int) [][]T {
 	result := make([][]T, count)
 	for i := range result {
@@ -112,7 +143,7 @@ func FilterOne[T any](s []T, fn func(T) bool) (t T) {
 }
 
 /*
-Cut off the beginning and end of the string and add ellipsis at both ends to truncate the string
+Truncate the string, keep the beginning and ends, and add an ellipsis in the middle to truncate the string
 */
 func TruncateString(v string, start, end int) string {
 	if len(v) < start+end {
