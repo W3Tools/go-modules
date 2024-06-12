@@ -2,6 +2,7 @@ package gmsui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -113,4 +114,70 @@ func (cli *SuiClient) GetMaxCoinObject(address, coinType string) (*types.Coin, e
 		}
 	}
 	return &max, nil
+}
+
+func GetObjectAndUnmarshal[T any](client *SuiClient, objectId string) (rawData *types.SuiObjectResponse, value *T, err error) {
+	rawData, err = client.GetObject(objectId)
+	if err != nil {
+		return nil, nil, fmt.Errorf("get object -> %v", err)
+	}
+
+	jsb, err := json.Marshal(rawData.Data.Content.Data.MoveObject.Fields)
+	if err != nil {
+		return nil, nil, fmt.Errorf("json marshal -> %v", err)
+	}
+
+	value = new(T)
+	err = json.Unmarshal(jsb, &value)
+	if err != nil {
+		return nil, nil, fmt.Errorf("json unmarshal -> %v", err)
+	}
+	return
+}
+
+func GetObjectsAndUnmarshal[T any](client *SuiClient, objectIds []string) (rawData []types.SuiObjectResponse, values []*T, err error) {
+	rawData, err = client.GetObjects(objectIds)
+	if err != nil {
+		return nil, nil, fmt.Errorf("get objects -> %v", err)
+	}
+
+	for _, data := range rawData {
+		jsb, err := json.Marshal(data.Data.Content.Data.MoveObject.Fields)
+		if err != nil {
+			return nil, nil, fmt.Errorf("json marshal -> %v", err)
+		}
+
+		var value = new(T)
+		err = json.Unmarshal(jsb, &value)
+		if err != nil {
+			return nil, nil, fmt.Errorf("json unmarshal -> %v", err)
+		}
+		values = append(values, value)
+	}
+	return
+}
+
+func GetDynamicFieldObjectAndUnmarshal[T any](client *SuiClient, parentId string, name sui_types.DynamicFieldName) (rawData *types.SuiObjectResponse, value *T, err error) {
+	parentIdHex, err := sui_types.NewObjectIdFromHex(parentId)
+	if err != nil {
+		return nil, nil, fmt.Errorf("new object id from hex -> %v", err)
+	}
+
+	rawData, err = client.Provider.GetDynamicFieldObject(client.ctx, *parentIdHex, name)
+	if err != nil {
+		return nil, nil, fmt.Errorf("get dynamic field object -> %v", err)
+	}
+
+	jsb, err := json.Marshal(rawData.Data.Content.Data.MoveObject.Fields)
+	if err != nil {
+		return nil, nil, fmt.Errorf("json marshal -> %v", err)
+	}
+
+	data := new(SuiMoveDynamicField[T])
+	err = json.Unmarshal(jsb, &data)
+	if err != nil {
+		return nil, nil, fmt.Errorf("json unmarshal -> %v", err)
+	}
+
+	return rawData, &data.Value.Fields, nil
 }
