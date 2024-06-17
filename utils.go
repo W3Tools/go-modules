@@ -12,20 +12,20 @@ import (
 func ReadFileBytes(filePath string) ([]byte, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("os.Open err, msg: %v", err)
+		return nil, err
 	}
 	defer f.Close()
 
 	stat, err := f.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("f.Stat err, msg: %v", err)
+		return nil, err
 	}
 
 	buffer := make([]byte, stat.Size())
 
 	_, err = f.Read(buffer)
 	if err != nil {
-		return nil, fmt.Errorf("f.Read err, msg: %v", err)
+		return nil, err
 	}
 	return buffer, nil
 }
@@ -56,7 +56,7 @@ func ReadFileHash(data []byte) (string, error) {
 	reader := bytes.NewReader(data)
 	hash := sha256.New()
 	if _, err := io.Copy(hash, reader); err != nil {
-		return "", fmt.Errorf("io.Copy err %v", err)
+		return "", err
 	}
 
 	sum := hash.Sum(nil)
@@ -146,7 +146,7 @@ func FilterOne[T any](s []T, fn func(T) bool) (t T) {
 Truncate the string, keep the beginning and ends, and add an ellipsis in the middle to truncate the string
 */
 func TruncateString(v string, start, end int) string {
-	if len(v) < start+end {
+	if len(v) <= start+end {
 		return v
 	}
 
@@ -161,4 +161,17 @@ func UniqueAppend[S ~[]E, E comparable](s S, v E) S {
 		s = append(s, v)
 	}
 	return s
+}
+
+func BytesEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
