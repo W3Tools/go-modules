@@ -15,6 +15,12 @@ jobs:
         with:
           go-version: 1.22
 
+      - name: Authenticate with GitHub token
+        run: echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
+
+      - name: Configure git
+        run: git config --global url."https://${{ secrets.GH_PAT }}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
+
       - name: Install dependencies
         run: go mod tidy
 
