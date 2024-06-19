@@ -25,12 +25,12 @@ type SignatureWithBytes struct {
 }
 
 type Signer interface {
-	Sign(bs []byte) []byte
+	Sign(bs []byte) ([]byte, error)
 	SignWithIntent(bs []byte, intent IntentScope) (*SignatureWithBytes, error)
 	SignTransactionBlock(bs []byte) (*SignatureWithBytes, error)
 	SignPersonalMessage(bs []byte) (*SignatureWithBytes, error)
 	ToSuiAddress() string
-	SignData(data []byte) []byte
+	SignData(data []byte) ([]byte, error)
 	GetKeyScheme() SignatureScheme
 	GetPublicKey() (PublicKey, error)
 }
@@ -57,9 +57,14 @@ func (signer *BaseSigner) SignWithIntent(bs []byte, intent IntentScope) (*Signat
 		return nil, err
 	}
 
+	sign, err := signer.self.Sign(digest[:])
+	if err != nil {
+		return nil, err
+	}
+
 	signature, err := ToSerializedSignature(SerializeSignatureInput{
 		SignatureScheme: signer.self.GetKeyScheme(),
-		Signature:       signer.self.Sign(digest[:]),
+		Signature:       sign,
 		PublicKey:       publicKey,
 	})
 	if err != nil {

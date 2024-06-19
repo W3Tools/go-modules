@@ -50,8 +50,7 @@ func (k *Ed25519Keypair) GetKeyScheme() cryptography.SignatureScheme {
 
 // The public key for this Ed25519 keypair
 func (k *Ed25519Keypair) GetPublicKey() (cryptography.PublicKey, error) {
-	publicKey, err := NewEd25519PublicKey(k.keypair.PublicKey)
-	return publicKey, err
+	return NewEd25519PublicKey(k.keypair.PublicKey)
 }
 
 // The Bech32 secret key string for this Ed25519 keypair
@@ -59,14 +58,13 @@ func (k *Ed25519Keypair) GetSecretKey() (string, error) {
 	return cryptography.EncodeSuiPrivateKey(k.keypair.SecretKey[:cryptography.PrivateKeySize], k.GetKeyScheme())
 }
 
-func (k *Ed25519Keypair) Sign(data []byte) []byte {
+func (k *Ed25519Keypair) Sign(data []byte) ([]byte, error) {
 	return k.SignData(data)
 }
 
 // Return the signature for the provided data using Ed25519.
-func (k *Ed25519Keypair) SignData(data []byte) []byte {
-	d := ed25519.Sign(k.keypair.SecretKey, data)
-	return d
+func (k *Ed25519Keypair) SignData(data []byte) ([]byte, error) {
+	return ed25519.Sign(k.keypair.SecretKey, data), nil
 }
 
 // Generate a new random Ed25519 keypair

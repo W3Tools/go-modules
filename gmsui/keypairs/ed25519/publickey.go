@@ -13,12 +13,12 @@ var (
 	_ cryptography.PublicKey = (*Ed25519PublicKey)(nil)
 )
 
+const Ed25519PublicKeySize = 32
+
 type Ed25519PublicKey struct {
 	data []byte
 	cryptography.BasePublicKey
 }
-
-const Ed25519PublicKeySize = 32
 
 func NewEd25519PublicKey[T string | []byte](value T) (publicKey *Ed25519PublicKey, err error) {
 	publicKey = new(Ed25519PublicKey)
@@ -57,12 +57,11 @@ func (key *Ed25519PublicKey) Verify(message []byte, signature cryptography.Seria
 	}
 
 	if parsed.SignatureScheme != cryptography.Ed25519Scheme {
-		return false, err
+		return false, fmt.Errorf("invalid signature scheme")
 	}
 
 	if !gm.BytesEqual(key.ToRawBytes(), parsed.PubKey) {
-		fmt.Printf("123\n")
-		return false, err
+		return false, fmt.Errorf("signature does not match public key")
 	}
 
 	return ed25519.Verify(parsed.PubKey, message, parsed.Signature), nil

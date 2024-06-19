@@ -2,6 +2,7 @@ package ed25519
 
 import (
 	"crypto/ed25519"
+	"crypto/rand"
 	"reflect"
 	"testing"
 
@@ -14,7 +15,7 @@ func TestGenerateAndVerifyEd25519Keypair(t *testing.T) {
 		t.Fatalf("unable to generate Ed25519 keypair, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), ed25519.PublicKeySize) {
+	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), Ed25519PublicKeySize) {
 		t.Errorf("expected public key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.keypair.PublicKey))
 	}
 
@@ -38,7 +39,7 @@ func TestGenerateAndVerifyEd25519Keypair(t *testing.T) {
 	message := []byte("Hello, Go Modules!")
 
 	t.Run("SignMessage", func(t *testing.T) {
-		signature := keypair.SignData(message)
+		signature, _ := keypair.SignData(message)
 
 		serializedSignature, err := cryptography.ToSerializedSignature(cryptography.SerializeSignatureInput{SignatureScheme: cryptography.Ed25519Scheme, PublicKey: publicKey, Signature: signature})
 		if err != nil {
@@ -73,6 +74,11 @@ func TestGenerateAndVerifyEd25519Keypair(t *testing.T) {
 
 func TestFromSecretKeyAndVerify(t *testing.T) {
 	seed := make([]byte, ed25519.SeedSize)
+	_, err := rand.Read(seed)
+	if err != nil {
+		t.Fatalf("error generating random secret key: %v", err)
+	}
+
 	keypair, err := FromSecretKey(seed, false)
 	if err != nil {
 		t.Fatalf("unable to create Ed25519 keypair from seed, msg: %v", err)
@@ -102,7 +108,7 @@ func TestFromSecretKeyAndVerify(t *testing.T) {
 	message := []byte("Hello, Go Modules!")
 
 	t.Run("SignMessage", func(t *testing.T) {
-		signature := keypair.SignData(message)
+		signature, _ := keypair.SignData(message)
 
 		serializedSignature, err := cryptography.ToSerializedSignature(cryptography.SerializeSignatureInput{SignatureScheme: cryptography.Ed25519Scheme, PublicKey: publicKey, Signature: signature})
 		if err != nil {
@@ -154,7 +160,7 @@ func TestDeriveKeypairFromMnemonic(t *testing.T) {
 	message := []byte("Hello, Go Modules!")
 
 	t.Run("SignMessage", func(t *testing.T) {
-		signature := keypair.SignData(message)
+		signature, _ := keypair.SignData(message)
 
 		serializedSignature, err := cryptography.ToSerializedSignature(cryptography.SerializeSignatureInput{SignatureScheme: cryptography.Ed25519Scheme, PublicKey: publicKey, Signature: signature})
 		if err != nil {
