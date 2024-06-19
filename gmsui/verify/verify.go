@@ -4,13 +4,13 @@ import (
 	"fmt"
 
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
-	"github.com/W3Tools/go-modules/gmsui/keypairs"
+	"github.com/W3Tools/go-modules/gmsui/keypairs/ed25519"
 )
 
 func PublicKeyFromRawBytes(signatureScheme cryptography.SignatureScheme, bs []byte) (cryptography.PublicKey, error) {
 	switch signatureScheme {
 	case cryptography.Ed25519Scheme:
-		return keypairs.NewEd25519PublicKey(bs)
+		return ed25519.NewEd25519PublicKey(bs)
 	case cryptography.Secp256k1Scheme:
 		return nil, fmt.Errorf("unimplemented %v", signatureScheme)
 	case cryptography.Secp256r1Scheme:

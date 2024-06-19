@@ -7,20 +7,20 @@ import (
 
 	"github.com/W3Tools/go-modules/gmsui/b64"
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
-	"github.com/W3Tools/go-modules/gmsui/keypairs"
+	"github.com/W3Tools/go-modules/gmsui/keypairs/ed25519"
 )
 
 var (
-	keypair0          *keypairs.Ed25519PublicKey
-	keypair1          *keypairs.Ed25519PublicKey
-	keypair2          *keypairs.Ed25519PublicKey
-	keypair3          *keypairs.Ed25519PublicKey
+	keypair0          *ed25519.Ed25519PublicKey
+	keypair1          *ed25519.Ed25519PublicKey
+	keypair2          *ed25519.Ed25519PublicKey
+	keypair3          *ed25519.Ed25519PublicKey
 	multisigPublicKey *MultiSigPublicKey
 )
 
 func init() {
 	var err error
-	keypair0, err = keypairs.NewEd25519PublicKey("RIIlNygk0BhV4AyP1Ntwa9jeiz9MULhjODIEvWSJ0gk=")
+	keypair0, err = ed25519.NewEd25519PublicKey("RIIlNygk0BhV4AyP1Ntwa9jeiz9MULhjODIEvWSJ0gk=")
 	if err != nil {
 		panic(fmt.Sprintf("new ed25519 public key err, msg: %v", err))
 	}
@@ -33,7 +33,7 @@ func init() {
 		keypair0.ToSuiAddress(), keypair0.Flag(), keypair0.ToRawBytes(), keypair0.ToBase64(), keypair0.ToSuiBytes(), keypair0.ToSuiPublicKey())
 	fmt.Println("")
 
-	keypair1, err = keypairs.NewEd25519PublicKey("H8gKV7gmH1T7YmAfwp5FNPWas0K0AFY2OBQ+0uOY57E=")
+	keypair1, err = ed25519.NewEd25519PublicKey("H8gKV7gmH1T7YmAfwp5FNPWas0K0AFY2OBQ+0uOY57E=")
 	if err != nil {
 		panic(fmt.Sprintf("new ed25519 public key err, msg: %v", err))
 	}
@@ -46,7 +46,7 @@ func init() {
 		keypair1.ToSuiAddress(), keypair1.Flag(), keypair1.ToRawBytes(), keypair1.ToBase64(), keypair1.ToSuiBytes(), keypair1.ToSuiPublicKey())
 	fmt.Println("")
 
-	keypair2, err = keypairs.NewEd25519PublicKey("hGxdp+5Molt7N1VRSvp5eExYViexZzISsYW51okg+7w=")
+	keypair2, err = ed25519.NewEd25519PublicKey("hGxdp+5Molt7N1VRSvp5eExYViexZzISsYW51okg+7w=")
 	if err != nil {
 		panic(fmt.Sprintf("new ed25519 public key err, msg: %v", err))
 	}
@@ -59,7 +59,7 @@ func init() {
 		keypair2.ToSuiAddress(), keypair2.Flag(), keypair2.ToRawBytes(), keypair2.ToBase64(), keypair2.ToSuiBytes(), keypair2.ToSuiPublicKey())
 	fmt.Println("")
 
-	keypair3, err = keypairs.NewEd25519PublicKey("bkIKm0xtKG3cPNZsFnIy+HDmBp8kLQspBu1rWqbmRbE=")
+	keypair3, err = ed25519.NewEd25519PublicKey("bkIKm0xtKG3cPNZsFnIy+HDmBp8kLQspBu1rWqbmRbE=")
 	if err != nil {
 		panic(fmt.Sprintf("new ed25519 public key err, msg: %v", err))
 	}
