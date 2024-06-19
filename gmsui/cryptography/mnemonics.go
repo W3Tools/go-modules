@@ -2,6 +2,7 @@ package cryptography
 
 import (
 	"encoding/hex"
+	"fmt"
 	"regexp"
 
 	"github.com/tyler-smith/go-bip39"
@@ -26,10 +27,10 @@ func IsValidBIP32Path(path string) bool {
 // Uses KDF to derive 64 bytes of key data from mnemonic with empty password.
 // mnemonics 12 words string split by spaces.
 func MnemonicToSeed(mnemonics string) ([]byte, error) {
-	// if !bip39.IsMnemonicValid(mnemonics) {
-	// 	fmt.Printf("m: %v\n", mnemonics)
-	// 	return nil, fmt.Errorf("invalid mnemonic")
-	// }
+	if !bip39.IsMnemonicValid(mnemonics) {
+		fmt.Printf("m: %v\n", mnemonics)
+		return nil, fmt.Errorf("invalid mnemonic")
+	}
 
 	return bip39.NewSeed(mnemonics, ""), nil
 }
