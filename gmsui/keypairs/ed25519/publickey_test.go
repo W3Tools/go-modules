@@ -1,4 +1,4 @@
-package keypairs
+package ed25519
 
 import (
 	"reflect"
@@ -9,7 +9,7 @@ import (
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
 )
 
-func TestEd25519(t *testing.T) {
+func TestEd25519PublicKey(t *testing.T) {
 	tests := []struct {
 		suiAddress   string
 		rawBytes     []byte
