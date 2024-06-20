@@ -28,7 +28,6 @@ func IsValidBIP32Path(path string) bool {
 // mnemonics 12 words string split by spaces.
 func MnemonicToSeed(mnemonics string) ([]byte, error) {
 	if !bip39.IsMnemonicValid(mnemonics) {
-		fmt.Printf("m: %v\n", mnemonics)
 		return nil, fmt.Errorf("invalid mnemonic")
 	}
 
