@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
+	"github.com/tyler-smith/go-bip39"
 )
 
 func TestGenerateAndVerifyEd25519Keypair(t *testing.T) {
@@ -126,7 +127,12 @@ func TestFromSecretKeyAndVerify(t *testing.T) {
 }
 
 func TestDeriveKeypairFromMnemonic(t *testing.T) {
-	mnemonic, err := cryptography.GenerateMnemonic()
+	entropy, err := bip39.NewEntropy(128)
+	if err != nil {
+		t.Fatalf("failed to new entropy, msg: %v", err)
+	}
+
+	mnemonic, err := bip39.NewMnemonic(entropy)
 	if err != nil {
 		t.Fatalf("unable to generate mnemonic, msg: %v", err)
 	}

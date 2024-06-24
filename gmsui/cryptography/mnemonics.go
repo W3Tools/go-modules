@@ -44,11 +44,11 @@ func MnemonicToSeedHex(mnemonics string) (string, error) {
 	return hex.EncodeToString(seed), nil
 }
 
-func GenerateMnemonic() (string, error) {
-	entropy, err := bip39.NewEntropy(128)
-	if err != nil {
-		return "", err
-	}
+// func GenerateMnemonic() (string, error) {
+// 	entropy, err := bip39.NewEntropy(128)
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return bip39.NewMnemonic(entropy)
-}
+// 	return bip39.NewMnemonic(entropy)
+// }
