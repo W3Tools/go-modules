@@ -9,6 +9,10 @@ const (
 	SuiAddressLength = 32
 )
 
+func NormalizeAddress(address string) string {
+	return fmt.Sprintf("0x%s", address)
+}
+
 func NormalizeShortAddress(address string) string {
 	return fmt.Sprintf("0x%s", strings.TrimLeft(address, "0x"))
 }
