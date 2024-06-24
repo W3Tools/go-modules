@@ -9,6 +9,24 @@ import (
 	"math/big"
 )
 
+// DeterministicSign generates deterministic ECDSA signature using RFC 6979 for secp256r1 curve
+func deterministicSign(priv *ecdsa.PrivateKey, hash []byte) (*big.Int, *big.Int, error) {
+	curve := elliptic.P256()
+	k := deterministicK(priv.D, hash)
+	r, s, err := signWithK(priv, hash, k)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Ensure s is in the lower half of the order
+	halfOrder := new(big.Int).Rsh(curve.Params().N, 1)
+	if s.Cmp(halfOrder) > 0 {
+		s.Sub(curve.Params().N, s)
+	}
+
+	return r, s, nil
+}
+
 // RFC 6979 deterministic K generation
 func deterministicK(priv *big.Int, hash []byte) *big.Int {
 	curve := elliptic.P256()
@@ -61,29 +79,12 @@ func deterministicK(priv *big.Int, hash []byte) *big.Int {
 	}
 }
 
-func deterministicSign(priv *ecdsa.PrivateKey, hash []byte) (*big.Int, *big.Int, error) {
-	curve := elliptic.P256()
-	k := deterministicK(priv.D, hash)
-	r, s, err := signWithK(priv, hash, k)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Ensure s is in the lower half of the order
-	halfOrder := new(big.Int).Rsh(curve.Params().N, 1)
-	if s.Cmp(halfOrder) > 0 {
-		s.Sub(curve.Params().N, s)
-	}
-
-	return r, s, nil
-}
-
 func signWithK(priv *ecdsa.PrivateKey, hash []byte, k *big.Int) (*big.Int, *big.Int, error) {
 	curve := priv.Curve
 	n := curve.Params().N
 
 	kInv := new(big.Int).ModInverse(k, n)
-	r, _ := priv.Curve.ScalarBaseMult(k.Bytes())
+	r, _ := curve.ScalarBaseMult(k.Bytes())
 	r.Mod(r, n)
 	if r.Sign() == 0 {
 		return nil, nil, fmt.Errorf("calculated R is zero")
