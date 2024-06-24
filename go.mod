@@ -8,6 +8,8 @@ require (
 	github.com/W3Tools/go-sui-sdk/v2 v2.1.4
 	github.com/aws/aws-lambda-go v1.46.0
 	github.com/aws/aws-sdk-go v1.50.31
+	github.com/btcsuite/btcd v0.23.0
+	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/btcsuite/btcd/btcutil v1.1.3
 	github.com/coming-chat/go-aptos v0.0.0-20221013022715-39f91035c785
 	github.com/ethereum/go-ethereum v1.13.15
@@ -29,7 +31,7 @@ require (
 	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
 	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
-	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect

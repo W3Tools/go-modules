@@ -74,7 +74,7 @@ func (k *Secp256r1PublicKey) Verify(message []byte, signature cryptography.Seria
 		return false, fmt.Errorf("signature does not match public key")
 	}
 
-	x, y := elliptic.UnmarshalCompressed(elliptic.P256(), k.data)
+	x, y := elliptic.UnmarshalCompressed(elliptic.P256(), k.ToRawBytes())
 	if x == nil || y == nil {
 		return false, errors.New("error unmarshaling public key")
 	}
