@@ -38,7 +38,7 @@ type ParsedPartialMultiSigSignature struct {
 type MultiSigPublicKey struct {
 	rawBytes          []byte
 	multisigPublicKey cryptography.MultiSigPublicKeyStruct
-	publicKeys        []cryptography.PubKeyEnumWeightPair
+	publicKeys        []cryptography.MultiSigPublicKeyPair
 	cryptography.BasePublicKey
 }
 
@@ -86,25 +86,29 @@ func NewMultiSigPublicKey[T string | []byte | cryptography.MultiSigPublicKeyStru
 	}
 
 	seenPublicKeys := make(map[string]bool)
-	multisig.publicKeys, err = gm.Map(multisig.multisigPublicKey.PubKeyMap, func(v cryptography.PubKeyEnumWeightPair) (cryptography.PubKeyEnumWeightPair, error) {
+	multisig.publicKeys, err = gm.Map(multisig.multisigPublicKey.PubKeyMap, func(v *cryptography.PubKeyEnumWeightPair) (cryptography.MultiSigPublicKeyPair, error) {
 		publicKeyString := string(v.PubKey[:])
 		if ok := seenPublicKeys[publicKeyString]; ok {
-			return cryptography.PubKeyEnumWeightPair{}, fmt.Errorf("multisig does not support duplicate public keys")
+			return cryptography.MultiSigPublicKeyPair{}, fmt.Errorf("multisig does not support duplicate public keys")
 		}
 		seenPublicKeys[publicKeyString] = true
 
 		if v.Weight < 1 {
-			return cryptography.PubKeyEnumWeightPair{}, fmt.Errorf("invalid weight")
+			return cryptography.MultiSigPublicKeyPair{}, fmt.Errorf("invalid weight")
 		}
 
-		return cryptography.PubKeyEnumWeightPair{PubKey: v.PubKey, Weight: v.Weight}, nil
+		pubKey, err := verify.PublicKeyFromRawBytes(cryptography.SignatureFlagToScheme[v.PubKey[0]], v.PubKey[1:])
+		if err != nil {
+			return cryptography.MultiSigPublicKeyPair{}, err
+		}
+		return cryptography.MultiSigPublicKeyPair{PublicKey: pubKey, Weight: v.Weight}, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	var totalWeight uint16 = 0
-	gm.Map(multisig.publicKeys, func(v cryptography.PubKeyEnumWeightPair) (any, error) {
+	gm.Map(multisig.publicKeys, func(v cryptography.MultiSigPublicKeyPair) (any, error) {
 		totalWeight = totalWeight + uint16(v.Weight)
 		return nil, nil
 	})
@@ -126,8 +130,8 @@ func NewMultiSigPublicKey[T string | []byte | cryptography.MultiSigPublicKeyStru
 }
 
 func (multisig *MultiSigPublicKey) FromPublicKeys(publicKeys []PublicKeyWeightPair, threshold uint16) (*MultiSigPublicKey, error) {
-	pubKeyMap, err := gm.Map(publicKeys, func(v PublicKeyWeightPair) (cryptography.PubKeyEnumWeightPair, error) {
-		return cryptography.PubKeyEnumWeightPair{PubKey: [33]byte(v.PublicKey.ToSuiBytes()), Weight: v.Weight}, nil
+	pubKeyMap, err := gm.Map(publicKeys, func(v PublicKeyWeightPair) (*cryptography.PubKeyEnumWeightPair, error) {
+		return &cryptography.PubKeyEnumWeightPair{PubKey: v.PublicKey.ToSuiBytes(), Weight: v.Weight}, nil
 	})
 	if err != nil {
 		return nil, err
@@ -154,7 +158,7 @@ func (multisig *MultiSigPublicKey) ToSuiAddress() string {
 	tmp.Write(threshold)
 
 	for _, publicKey := range multisig.publicKeys {
-		tmp.Write(publicKey.PubKey[:])
+		tmp.Write(publicKey.PublicKey.ToSuiBytes())
 		tmp.WriteByte(publicKey.Weight)
 	}
 
@@ -167,7 +171,7 @@ func (multisig *MultiSigPublicKey) ToRawBytes() []byte {
 	return multisig.rawBytes
 }
 
-func (multisig *MultiSigPublicKey) GetPublicKeys() []cryptography.PubKeyEnumWeightPair {
+func (multisig *MultiSigPublicKey) GetPublicKeys() []cryptography.MultiSigPublicKeyPair {
 	return multisig.publicKeys
 }
 
@@ -202,7 +206,7 @@ func (multisig *MultiSigPublicKey) Verify(message []byte, multisigSignature cryp
 		return false, err
 	}
 
-	if !gm.BytesEqual(bs1, bs2) {
+	if !bytes.Equal(bs1, bs2) {
 		return false, err
 	}
 
@@ -262,7 +266,7 @@ func (multisig *MultiSigPublicKey) CombinePartialSignatures(signatures []cryptog
 
 		var publicKeyIndex *int
 		for j := 0; j < len(multisig.publicKeys); j++ {
-			if gm.BytesEqual(parsed.PubKey, multisig.publicKeys[j].PubKey[1:]) {
+			if bytes.Equal(parsed.PubKey, multisig.publicKeys[j].PublicKey.ToRawBytes()) {
 				if bitmap&(1<<j) > 0 {
 					return "", fmt.Errorf("received multiple signatures from the same public key")
 				}

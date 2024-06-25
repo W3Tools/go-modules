@@ -13,8 +13,6 @@ var (
 	_ cryptography.PublicKey = (*Ed25519PublicKey)(nil)
 )
 
-const Ed25519PublicKeySize = 32
-
 type Ed25519PublicKey struct {
 	data []byte
 	cryptography.BasePublicKey
@@ -32,8 +30,8 @@ func NewEd25519PublicKey[T string | []byte](value T) (publicKey *Ed25519PublicKe
 		publicKey.data = v
 	}
 
-	if len(publicKey.data) != Ed25519PublicKeySize {
-		return nil, fmt.Errorf("invalid public key input. expected %v bytes, got %v", Ed25519PublicKeySize, len(publicKey.data))
+	if len(publicKey.data) != cryptography.Ed25519PublicKeySize {
+		return nil, fmt.Errorf("invalid public key input. expected %v bytes, got %v", cryptography.Ed25519PublicKeySize, len(publicKey.data))
 	}
 	publicKey.SetSelf(publicKey)
 	return

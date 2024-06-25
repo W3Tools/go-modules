@@ -16,7 +16,7 @@ func TestGenerateAndVerifyEd25519Keypair(t *testing.T) {
 		t.Fatalf("unable to generate Ed25519 keypair, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), Ed25519PublicKeySize) {
+	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), cryptography.Ed25519PublicKeySize) {
 		t.Errorf("expected public key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.keypair.PublicKey))
 	}
 

@@ -17,8 +17,6 @@ var (
 	_ cryptography.PublicKey = (*Secp256r1PublicKey)(nil)
 )
 
-const Secp256r1PublicKeySize = 33
-
 // A Secp256r1 public key
 type Secp256r1PublicKey struct {
 	data []byte
@@ -37,8 +35,8 @@ func NewSecp256r1PublicKey[T string | []byte](value T) (publicKey *Secp256r1Publ
 	case []byte:
 		publicKey.data = v
 	}
-	if len(publicKey.data) != Secp256r1PublicKeySize {
-		return nil, fmt.Errorf("invalid public key input, expected %d bytes, got %d", Secp256r1PublicKeySize, len(publicKey.data))
+	if len(publicKey.data) != cryptography.Secp256r1PublicKeySize {
+		return nil, fmt.Errorf("invalid public key input, expected %d bytes, got %d", cryptography.Secp256r1PublicKeySize, len(publicKey.data))
 	}
 	publicKey.SetSelf(publicKey)
 	return

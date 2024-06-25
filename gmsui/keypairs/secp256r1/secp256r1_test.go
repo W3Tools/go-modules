@@ -15,8 +15,8 @@ func TestGenerateAndVerifySecp256r1Keypair(t *testing.T) {
 		t.Fatalf("unable to generate Secp256r1 keypair, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), Secp256r1PublicKeySize) {
-		t.Errorf("expected public key size to be %d, but got %d", Secp256r1PublicKeySize, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), cryptography.Secp256r1PublicKeySize) {
+		t.Errorf("expected public key size to be %d, but got %d", cryptography.Secp256r1PublicKeySize, len(keypair.keypair.PublicKey))
 	}
 
 	if !reflect.DeepEqual(len(keypair.keypair.SecretKey), 32) {
