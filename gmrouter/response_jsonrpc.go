@@ -3,6 +3,8 @@ package gmrouter
 import (
 	"encoding/json"
 	"net/http"
+
+	gm "github.com/W3Tools/go-modules"
 )
 
 const DefaultJsonRPCVersion = "2.0"
@@ -48,11 +50,15 @@ var DefaultJsonRPCMessage = map[int]string{
 }
 
 func (r *Router) JsonRPCShouldBindJSON() (request *JsonRPCRequest, err error) {
-	req := JsonRPCRequest{}
-	if err := r.ApiContext.ShouldBindJSON(&req); err != nil {
+	request = new(JsonRPCRequest)
+	if err := r.ApiContext.ShouldBindJSON(&request); err != nil {
 		return nil, err
 	}
-	return &req, nil
+
+	if err := gm.ValidateStruct(request); err != nil {
+		return nil, err
+	}
+	return request, nil
 }
 
 func (*Router) NewJsonRPCResponseMessage(id json.RawMessage, code int, data interface{}) JsonRPCResponse {
