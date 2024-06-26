@@ -3,11 +3,11 @@ package gmrouter
 import "net/http"
 
 func (r *Router) ApiResponse(code int, data interface{}) {
-	r.Api.Header("Access-Control-Allow-Origin", "*")
-	r.Api.Header("Access-Control-Allow-Methods", "*")
-	r.Api.Header("Access-Control-Allow-Headers", "*")
+	r.ApiContext.Header("Access-Control-Allow-Origin", "*")
+	r.ApiContext.Header("Access-Control-Allow-Methods", "*")
+	r.ApiContext.Header("Access-Control-Allow-Headers", "*")
 
-	r.Api.JSON(code, r.NewResponseMessage(code, data))
+	r.ApiContext.JSON(code, r.NewResponseMessage(code, data))
 }
 
 func (r *Router) ApiResponseOk(data interface{}) {
