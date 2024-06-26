@@ -11,7 +11,7 @@ const DefaultJsonRPCVersion = "2.0"
 
 // JSON-RPC request message structure
 type JsonRPCRequest struct {
-	ID      json.RawMessage `json:"id"`
+	ID      json.RawMessage `json:"id" validate:"required"`
 	Jsonrpc string          `json:"jsonrpc"`
 	Method  string          `json:"method"`
 	Params  json.RawMessage `json:"params"`
@@ -19,7 +19,7 @@ type JsonRPCRequest struct {
 
 // JSON-RPC response message structure
 type JsonRPCResponse struct {
-	ID      json.RawMessage `json:"id,omitempty"`
+	ID      json.RawMessage `json:"id"`
 	Jsonrpc string          `json:"jsonrpc"`
 	Result  interface{}     `json:"result,omitempty"`
 	Error   *JsonRPCError   `json:"error,omitempty"`
@@ -33,20 +33,21 @@ type JsonRPCError struct {
 }
 
 const (
-	OK             int = 200
-	InvalidRequest int = -32600
-	MethodNotFound int = -32601
-	InvalidParams  int = -32602
-	InternalError  int = -32603
-	ParseError     int = -32700
+	OK             string = "ok"
+	InvalidRequest string = "Invalid request"
+	MethodNotFound string = "Method not found"
+	InvalidParams  string = "Invalid params"
+	NoMoreParams   string = "No more params"
+	InternalError  string = "Internal server error"
+	ParseError     string = "Parse error"
 )
 
-var DefaultJsonRPCMessage = map[int]string{
-	InvalidRequest: "Invalid request",
-	MethodNotFound: "Method not found",
-	InvalidParams:  "Invalid params",
-	InternalError:  "Internal server error",
-	ParseError:     "Parse error",
+var DefaultJsonRPCCode = map[string]int{
+	InvalidRequest: -32600,
+	MethodNotFound: -32601,
+	InvalidParams:  -32602,
+	InternalError:  -32603,
+	ParseError:     -32700,
 }
 
 func (r *Router) JsonRPCShouldBindJSON() (request *JsonRPCRequest, err error) {
@@ -61,49 +62,53 @@ func (r *Router) JsonRPCShouldBindJSON() (request *JsonRPCRequest, err error) {
 	return request, nil
 }
 
-func (*Router) NewJsonRPCResponseMessage(id json.RawMessage, code int, data interface{}) JsonRPCResponse {
+func (*Router) NewJsonRPCResponseMessage(id json.RawMessage, code int, msg string, data interface{}) JsonRPCResponse {
 	response := JsonRPCResponse{Jsonrpc: DefaultJsonRPCVersion, ID: id}
 
-	if code == OK {
+	if msg == OK {
 		response.Result = data
 	} else {
 		response.Error = &JsonRPCError{
 			Code:    code,
-			Message: DefaultJsonRPCMessage[code],
+			Message: msg,
 			Data:    data,
 		}
 	}
 	return response
 }
 
-func (r *Router) JsonRPCResponse(id json.RawMessage, code int, data interface{}) {
+func (r *Router) JsonRPCResponse(id json.RawMessage, code int, msg string, data interface{}) {
 	r.ApiContext.Header("Access-Control-Allow-Origin", "*")
 	r.ApiContext.Header("Access-Control-Allow-Methods", "*")
 	r.ApiContext.Header("Access-Control-Allow-Headers", "*")
 
-	r.ApiContext.JSON(http.StatusOK, r.NewJsonRPCResponseMessage(id, code, data))
+	r.ApiContext.JSON(http.StatusOK, r.NewJsonRPCResponseMessage(id, code, msg, data))
 }
 
 func (r *Router) JsonRPCResponseOk(id json.RawMessage, data interface{}) {
-	r.JsonRPCResponse(id, http.StatusOK, data)
+	r.JsonRPCResponse(id, http.StatusOK, "", data)
 }
 
 func (r *Router) JsonRPCResponseInvalidRequest(id json.RawMessage, data interface{}) {
-	r.JsonRPCResponse(id, InvalidRequest, data)
+	r.JsonRPCResponse(id, DefaultJsonRPCCode[InvalidRequest], InvalidRequest, data)
 }
 
 func (r *Router) JsonRPCResponseMethodNotFound(id json.RawMessage, data interface{}) {
-	r.JsonRPCResponse(id, MethodNotFound, data)
+	r.JsonRPCResponse(id, DefaultJsonRPCCode[MethodNotFound], MethodNotFound, data)
 }
 
 func (r *Router) JsonRPCResponseInvalidParams(id json.RawMessage, data interface{}) {
-	r.JsonRPCResponse(id, InvalidParams, data)
+	r.JsonRPCResponse(id, DefaultJsonRPCCode[InvalidParams], InvalidParams, data)
 }
 
 func (r *Router) JsonRPCResponseInternalError(id json.RawMessage, data interface{}) {
-	r.JsonRPCResponse(id, InternalError, data)
+	r.JsonRPCResponse(id, DefaultJsonRPCCode[InternalError], InternalError, data)
 }
 
 func (r *Router) JsonRPCResponseParseError(id json.RawMessage, data interface{}) {
-	r.JsonRPCResponse(id, ParseError, data)
+	r.JsonRPCResponse(id, DefaultJsonRPCCode[ParseError], ParseError, data)
+}
+
+func (r *Router) JsonRPCResponseNoMoreParams(id json.RawMessage, data interface{}) {
+	r.JsonRPCResponse(id, DefaultJsonRPCCode[NoMoreParams], NoMoreParams, data)
 }
