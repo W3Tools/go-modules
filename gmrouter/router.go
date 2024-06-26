@@ -12,7 +12,7 @@ import (
 )
 
 type Router struct {
-	Api *gin.Context
+	ApiContext *gin.Context
 }
 
 var routerEngine *gin.Engine
@@ -100,17 +100,17 @@ func crosSet(c *gin.Context) {
 }
 
 func healthCheck(ctx *gin.Context) {
-	r := Router{Api: ctx}
+	r := Router{ApiContext: ctx}
 	r.ApiResponseOk("ok")
 }
 
 func noRouteSet(ctx *gin.Context) {
-	r := Router{Api: ctx}
+	r := Router{ApiContext: ctx}
 	r.ApiResponse(http.StatusNotFound, "404 page not found.")
 }
 
 func methodNotAllowed(ctx *gin.Context) {
-	r := Router{Api: ctx}
+	r := Router{ApiContext: ctx}
 	r.ApiResponse(http.StatusMethodNotAllowed, "Method not allowed.")
 }
 
