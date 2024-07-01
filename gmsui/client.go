@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/W3Tools/go-modules/gmsui/cryptography"
 	sdk_client "github.com/W3Tools/go-sui-sdk/v2/client"
 	"github.com/W3Tools/go-sui-sdk/v2/lib"
 	"github.com/W3Tools/go-sui-sdk/v2/move_types"
@@ -18,7 +19,7 @@ import (
 type SuiClient struct {
 	ctx       context.Context
 	Provider  *sdk_client.Client
-	SuiSigner *SuiSigner
+	Keypair   cryptography.Keypair
 	MultiSig  *SuiMultiSig
 	GasBudget *big.Int
 }
@@ -41,11 +42,8 @@ func (client *SuiClient) Context() context.Context {
 	return client.ctx
 }
 
-func (client *SuiClient) NewSigner(signer *SuiSigner) {
-	if client.SuiSigner == nil {
-		client.SuiSigner = signer
-	}
-	client.updateGas(client.SuiSigner.Signer.Address, client.SuiSigner.Gas)
+func (client *SuiClient) SetKeypair(keypair cryptography.Keypair) {
+	client.Keypair = keypair
 }
 
 func (client *SuiClient) NewMultiSig(multisig *SuiMultiSig) {
@@ -56,17 +54,8 @@ func (client *SuiClient) NewMultiSig(multisig *SuiMultiSig) {
 	client.updateGas(client.MultiSig.Address, client.MultiSig.Gas)
 }
 
-// Tools
-func (client *SuiClient) SetDefaultGasObjectToSigner(obj string) {
-	client.SuiSigner.Gas.Live = obj
-}
-
 func (client *SuiClient) SetDefaultGasObjectToMultiSig(obj string) {
 	client.MultiSig.Gas.Live = obj
-}
-
-func (client *SuiClient) EnableAutoUpdateGasObjectFromSigner() {
-	go client.AutoUpdateGas(client.SuiSigner.Signer.Address, client.SuiSigner.Gas)
 }
 
 func (client *SuiClient) EnableAutoUpdateGasObjectFromMultiSig() {
@@ -78,7 +67,7 @@ func (client *SuiClient) SetDefaultGasBudget(budget *big.Int) {
 }
 
 // Instance: Move Call
-func (client *SuiClient) NewMoveCall(signer, gas, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
+func (client *SuiClient) NewMoveCall(signer string, gas *string, target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
 	entry := strings.Split(target, "::")
 	if len(entry) != 3 {
 		return nil, fmt.Errorf("invalid target [%s]", target)
@@ -94,22 +83,30 @@ func (client *SuiClient) NewMoveCall(signer, gas, target string, args []interfac
 		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex(package) %v", err)
 	}
 
-	_gas, err := sui_types.NewObjectIdFromHex(gas)
-	if err != nil {
-		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex(gas) %v", err)
+	var referenceGas *move_types.AccountAddress
+	if gas == nil {
+		referenceGas, err = client.getMaxGasCoin(signer)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		referenceGas, err = sui_types.NewObjectIdFromHex(*gas)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	gasBudget := types.NewSafeSuiBigInt[uint64](client.GasBudget.Uint64())
 
-	return client.Provider.MoveCall(client.ctx, *_signer, *packageId, entry[1], entry[2], typeArgs, args, _gas, gasBudget)
+	return client.Provider.MoveCall(client.ctx, *_signer, *packageId, entry[1], entry[2], typeArgs, args, referenceGas, gasBudget)
 }
 
 func (client *SuiClient) NewMoveCallFromSigner(target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
-	return client.NewMoveCall(client.SuiSigner.Signer.Address, client.SuiSigner.Gas.Live, target, args, typeArgs)
+	return client.NewMoveCall(client.Keypair.ToSuiAddress(), nil, target, args, typeArgs)
 }
 
 func (client *SuiClient) NewMoveCallFromMultiSig(target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
-	return client.NewMoveCall(client.MultiSig.Address, client.MultiSig.Gas.Live, target, args, typeArgs)
+	return client.NewMoveCall(client.MultiSig.Address, nil, target, args, typeArgs)
 }
 
 func (client *SuiClient) ExecuteTransaction(b64TxBytes string, signatures []any) (*types.SuiTransactionBlockResponse, error) {
@@ -129,14 +126,14 @@ func (client *SuiClient) ExecuteTransaction(b64TxBytes string, signatures []any)
 }
 
 func (client *SuiClient) MoveCallFromSigner(target string, args []interface{}, typeArgs []string) (result *types.SuiTransactionBlockResponse, err error) {
-	metadata, err := client.NewMoveCall(client.SuiSigner.Signer.Address, client.SuiSigner.Gas.Live, target, args, typeArgs)
+	metadata, err := client.NewMoveCall(client.Keypair.ToSuiAddress(), nil, target, args, typeArgs)
 	if err != nil {
-		return nil, fmt.Errorf("moveCall err %v", err)
+		return nil, err
 	}
 
-	signature, err := client.SuiSigner.SignTransaction(metadata.TxBytes.String())
+	signature, err := client.Keypair.SignTransactionBlock(metadata.TxBytes.Data())
 	if err != nil {
-		return nil, fmt.Errorf("client.SuiSigner.SignTransaction %v", err)
+		return nil, err
 	}
 
 	return client.ExecuteTransaction(metadata.TxBytes.String(), []any{signature.Signature})
@@ -182,4 +179,28 @@ func ParseDevInspectReturnValue(v interface{}) []byte {
 		bs = append(bs, uint8(float64Value))
 	}
 	return bs
+}
+
+func (client *SuiClient) getMaxGasCoin(address string) (*sui_types.ObjectID, error) {
+	addressHex, err := sui_types.NewAddressFromHex(address)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := client.Provider.GetCoins(client.ctx, *addressHex, &SuiGasCoinType, nil, 50)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.Data) == 0 {
+		return nil, fmt.Errorf("gas coin not found")
+	}
+
+	maxGas := result.Data[0]
+	for _, c := range result.Data {
+		if c.Balance.Uint64() > maxGas.Balance.Uint64() {
+			maxGas = c
+		}
+	}
+	return &maxGas.CoinObjectId, nil
 }
