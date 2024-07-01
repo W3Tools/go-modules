@@ -43,9 +43,11 @@ const (
 )
 
 var DefaultJsonRPCCode = map[string]int{
+	OK:             200,
 	InvalidRequest: -32600,
 	MethodNotFound: -32601,
 	InvalidParams:  -32602,
+	NoMoreParams:   -32602,
 	InternalError:  -32603,
 	ParseError:     -32700,
 }
@@ -65,7 +67,7 @@ func (r *Router) JsonRPCShouldBindJSON() (request *JsonRPCRequest, err error) {
 func (*Router) NewJsonRPCResponseMessage(id json.RawMessage, code int, msg string, data interface{}) JsonRPCResponse {
 	response := JsonRPCResponse{Jsonrpc: DefaultJsonRPCVersion, ID: id}
 
-	if msg == OK {
+	if msg == OK || code == DefaultJsonRPCCode[OK] {
 		response.Result = data
 	} else {
 		response.Error = &JsonRPCError{
@@ -86,7 +88,7 @@ func (r *Router) JsonRPCResponse(id json.RawMessage, code int, msg string, data 
 }
 
 func (r *Router) JsonRPCResponseOk(id json.RawMessage, data interface{}) {
-	r.JsonRPCResponse(id, http.StatusOK, "", data)
+	r.JsonRPCResponse(id, DefaultJsonRPCCode[OK], OK, data)
 }
 
 func (r *Router) JsonRPCResponseInvalidRequest(id json.RawMessage, data interface{}) {
@@ -111,4 +113,15 @@ func (r *Router) JsonRPCResponseParseError(id json.RawMessage, data interface{})
 
 func (r *Router) JsonRPCResponseNoMoreParams(id json.RawMessage, data interface{}) {
 	r.JsonRPCResponse(id, DefaultJsonRPCCode[NoMoreParams], NoMoreParams, data)
+}
+
+type JsonRPCHandlerFunc func(*Router, *JsonRPCRequest)
+
+func WrapperJsonRPCHandler(router *Router, request *JsonRPCRequest, handlers ...JsonRPCHandlerFunc) {
+	for _, handler := range handlers {
+		handler(router, request)
+		if router.ApiContext.IsAborted() {
+			return
+		}
+	}
 }
