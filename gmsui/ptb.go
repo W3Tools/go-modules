@@ -200,21 +200,22 @@ func ParseFunctionTypeArguments(typeArgs []string) (typeArguments []move_types.T
 }
 
 func (ptb *ProgrammableTransactionBlock) FinishFromSigner() ([]byte, error) {
-	if ptb.client.SuiSigner == nil {
-		return nil, fmt.Errorf("finish ptb from signer failed, invalid signer")
+	if ptb.client.Keypair == nil {
+		return nil, fmt.Errorf("unable to finish ptb, invalid signer")
 	}
-	return ptb.Finish(ptb.client.SuiSigner.Signer.Address, &ptb.client.SuiSigner.Gas.Live, ptb.client.GasBudget.Uint64(), 751)
+
+	return ptb.Finish(ptb.client.Keypair.ToSuiAddress(), nil, ptb.client.GasBudget.Uint64(), nil)
 }
 
 func (ptb *ProgrammableTransactionBlock) FinishFromMultisig() ([]byte, error) {
 	if ptb.client.MultiSig == nil {
-		return nil, fmt.Errorf("finish ptb from multisig failed, invalid multisig")
+		return nil, fmt.Errorf("unable to finish ptb, invalid multisig")
 	}
 
-	return ptb.Finish(ptb.client.MultiSig.Address, &ptb.client.MultiSig.Gas.Live, ptb.client.GasBudget.Uint64(), 751)
+	return ptb.Finish(ptb.client.MultiSig.Address, &ptb.client.MultiSig.Gas.Live, ptb.client.GasBudget.Uint64(), nil)
 }
 
-func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string, gasBudget, gasPrice uint64) ([]byte, error) {
+func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string, gasBudget uint64, gasPrice *uint64) ([]byte, error) {
 	hexSender, err := sui_types.NewAddressFromHex(sender)
 	if err != nil {
 		return nil, fmt.Errorf("finish ptb failed, %s can not convert to address hex %v", sender, err)
@@ -238,12 +239,23 @@ func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string
 		gasPayment = append(gasPayment, &gasReference)
 	}
 
+	var referenceGasPrice uint64
+	if gasPrice == nil {
+		refGasPrice, err := ptb.client.Provider.GetReferenceGasPrice(ptb.client.ctx)
+		if err != nil {
+			return nil, err
+		}
+		referenceGasPrice = refGasPrice.Uint64() + 1
+	} else {
+		referenceGasPrice = *gasPrice
+	}
+
 	tx := sui_types.NewProgrammable(
 		*hexSender,
 		gasPayment,
 		ptb.builder.Finish(),
 		gasBudget,
-		gasPrice,
+		referenceGasPrice,
 	)
 	return bcs.Marshal(tx)
 }

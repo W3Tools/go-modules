@@ -10,7 +10,6 @@ require (
 	github.com/btcsuite/btcd v0.23.0
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2
 	github.com/btcsuite/btcd/btcutil v1.1.3
-	github.com/coming-chat/go-aptos v0.0.0-20221013022715-39f91035c785
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/everFinance/goar v1.6.3
 	github.com/fardream/go-bcs v0.5.0
