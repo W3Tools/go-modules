@@ -4,7 +4,7 @@ go 1.22.1
 
 require (
 	github.com/DeanThompson/ginpprof v0.0.0-20201112072838-007b1e56b2e1
-	github.com/W3Tools/go-sui-sdk/v2 v2.1.4
+	github.com/W3Tools/go-sui-sdk/v2 v2.1.5
 	github.com/aws/aws-lambda-go v1.46.0
 	github.com/aws/aws-sdk-go v1.50.31
 	github.com/btcsuite/btcd v0.23.0
@@ -32,7 +32,6 @@ replace github.com/fardream/go-bcs => github.com/W3Tools/go-bcs v0.0.3
 require (
 	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
 	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
-	github.com/W3Tools/go-bcs v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect
