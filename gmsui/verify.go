@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/W3Tools/go-bcs/bcs"
+	"github.com/fardream/go-bcs/bcs"
 	"golang.org/x/crypto/blake2b"
 )
 

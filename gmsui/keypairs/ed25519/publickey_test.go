@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/W3Tools/go-bcs/bcs"
 	gm "github.com/W3Tools/go-modules"
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
+	"github.com/fardream/go-bcs/bcs"
 )
 
 func TestEd25519PublicKey(t *testing.T) {
