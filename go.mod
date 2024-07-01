@@ -4,7 +4,6 @@ go 1.22.1
 
 require (
 	github.com/DeanThompson/ginpprof v0.0.0-20201112072838-007b1e56b2e1
-	github.com/W3Tools/go-bcs v1.0.1
 	github.com/W3Tools/go-sui-sdk/v2 v2.1.4
 	github.com/aws/aws-lambda-go v1.46.0
 	github.com/aws/aws-sdk-go v1.50.31
@@ -14,6 +13,7 @@ require (
 	github.com/coming-chat/go-aptos v0.0.0-20221013022715-39f91035c785
 	github.com/ethereum/go-ethereum v1.13.15
 	github.com/everFinance/goar v1.6.3
+	github.com/fardream/go-bcs v0.5.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.14.0
 	github.com/go-sql-driver/mysql v1.7.1
@@ -27,9 +27,12 @@ require (
 	gorm.io/gorm v1.25.5
 )
 
+replace github.com/fardream/go-bcs => github.com/W3Tools/go-bcs v0.0.3
+
 require (
 	github.com/FactomProject/basen v0.0.0-20150613233007-fe3947df716e // indirect
 	github.com/FactomProject/btcutilecc v0.0.0-20130527213604-d3a63a5752ec // indirect
+	github.com/W3Tools/go-bcs v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect

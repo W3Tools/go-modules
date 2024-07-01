@@ -3,9 +3,9 @@ package cryptography
 import (
 	"fmt"
 
-	"github.com/W3Tools/go-bcs/bcs"
 	"github.com/W3Tools/go-modules/gmsui/b64"
 	"github.com/btcsuite/btcd/btcutil/bech32"
+	"github.com/fardream/go-bcs/bcs"
 	"golang.org/x/crypto/blake2b"
 )
 

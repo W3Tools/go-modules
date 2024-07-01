@@ -18,6 +18,8 @@ github.com/StackExchange/wmi v1.2.1/go.mod h1:rcmrprowKIVzvc+NUiLncP2uuArMWLCbu9
 github.com/VictoriaMetrics/fastcache v1.12.1 h1:i0mICQuojGDL3KblA7wUNlY5lOK6a4bwt3uRKnkZU40=
 github.com/VictoriaMetrics/fastcache v1.12.1/go.mod h1:tX04vaqcNoQeGLD+ra5pU5sWkuxnzWhEzLwhP9w653o=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
+github.com/W3Tools/go-bcs v0.0.3 h1:FbTcnM+RmKm2sp2FQ0t/kNgznK8oOOdJh0q34iv+4Gs=
+github.com/W3Tools/go-bcs v0.0.3/go.mod h1:UsoxhIoe2GsVexX0s5NDLIChxeb/JUbjw7IWzzgF3Xk=
 github.com/W3Tools/go-bcs v1.0.1 h1:1eydej59tol6M6OjPmgxYG61szVCes8lp+zzo/0DqGQ=
 github.com/W3Tools/go-bcs v1.0.1/go.mod h1:jFLtqCWh+uI3iEktX2y7JhJM7OxS7rCfzFn0F6xrqGw=
 github.com/W3Tools/go-sui-sdk/v2 v2.1.4 h1:ghqlKZYj2uu8hxmyqnf9nkjqVkpmFGC8gogoV5VAbUI=

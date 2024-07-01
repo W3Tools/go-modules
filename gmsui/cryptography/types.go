@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/W3Tools/go-bcs/bcs"
+	"github.com/fardream/go-bcs/bcs"
 )
 
 type CompressedSignature struct {

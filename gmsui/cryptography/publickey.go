@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/hex"
 
-	"github.com/W3Tools/go-bcs/bcs"
 	gm "github.com/W3Tools/go-modules"
 	"github.com/W3Tools/go-modules/gmsui/b64"
 	"github.com/W3Tools/go-modules/gmsui/utils"
+	"github.com/fardream/go-bcs/bcs"
 	"golang.org/x/crypto/blake2b"
 )
 
