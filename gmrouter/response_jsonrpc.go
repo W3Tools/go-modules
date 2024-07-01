@@ -117,10 +117,10 @@ func (r *Router) JsonRPCResponseNoMoreParams(id json.RawMessage, data interface{
 
 type JsonRPCHandlerFunc func(*Router, *JsonRPCRequest)
 
-func WrapperJsonRPCHandler(router *Router, request *JsonRPCRequest, handlers ...JsonRPCHandlerFunc) {
+func (r *Router) WrapperJsonRPCHandler(request *JsonRPCRequest, handlers ...JsonRPCHandlerFunc) {
 	for _, handler := range handlers {
-		handler(router, request)
-		if router.ApiContext.IsAborted() {
+		handler(r, request)
+		if r.ApiContext.IsAborted() {
 			return
 		}
 	}
