@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
+	"github.com/W3Tools/go-modules/gmsui/multisig"
 	sdk_client "github.com/W3Tools/go-sui-sdk/v2/client"
 	"github.com/W3Tools/go-sui-sdk/v2/lib"
 	"github.com/W3Tools/go-sui-sdk/v2/move_types"
@@ -20,7 +21,7 @@ type SuiClient struct {
 	ctx       context.Context
 	Provider  *sdk_client.Client
 	Keypair   cryptography.Keypair
-	MultiSig  *SuiMultiSig
+	MultiSig  *multisig.MultiSigPublicKey
 	GasBudget *big.Int
 }
 
@@ -46,20 +47,8 @@ func (client *SuiClient) SetKeypair(keypair cryptography.Keypair) {
 	client.Keypair = keypair
 }
 
-func (client *SuiClient) NewMultiSig(multisig *SuiMultiSig) {
-	if client.MultiSig == nil {
-		client.MultiSig = multisig
-	}
-
-	client.updateGas(client.MultiSig.Address, client.MultiSig.Gas)
-}
-
-func (client *SuiClient) SetDefaultGasObjectToMultiSig(obj string) {
-	client.MultiSig.Gas.Live = obj
-}
-
-func (client *SuiClient) EnableAutoUpdateGasObjectFromMultiSig() {
-	go client.AutoUpdateGas(client.MultiSig.Address, client.MultiSig.Gas)
+func (client *SuiClient) SetMultiSig(multisig *multisig.MultiSigPublicKey) {
+	client.MultiSig = multisig
 }
 
 func (client *SuiClient) SetDefaultGasBudget(budget *big.Int) {
@@ -75,12 +64,12 @@ func (client *SuiClient) NewMoveCall(signer string, gas *string, target string, 
 
 	_signer, err := sui_types.NewAddressFromHex(signer)
 	if err != nil {
-		return nil, fmt.Errorf("sui_types.NewAddressFromHex(signer) %v", err)
+		return nil, err
 	}
 
 	packageId, err := sui_types.NewObjectIdFromHex(entry[0])
 	if err != nil {
-		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex(package) %v", err)
+		return nil, err
 	}
 
 	var referenceGas *move_types.AccountAddress
@@ -106,7 +95,7 @@ func (client *SuiClient) NewMoveCallFromSigner(target string, args []interface{}
 }
 
 func (client *SuiClient) NewMoveCallFromMultiSig(target string, args []interface{}, typeArgs []string) (*types.TransactionBytes, error) {
-	return client.NewMoveCall(client.MultiSig.Address, nil, target, args, typeArgs)
+	return client.NewMoveCall(client.MultiSig.ToSuiAddress(), nil, target, args, typeArgs)
 }
 
 func (client *SuiClient) ExecuteTransaction(b64TxBytes string, signatures []any) (*types.SuiTransactionBlockResponse, error) {
@@ -141,14 +130,14 @@ func (client *SuiClient) MoveCallFromSigner(target string, args []interface{}, t
 
 func (client *SuiClient) ImplementationOfDevInspect(txBytes string) (*types.DevInspectResults, error) {
 	var accountObj *move_types.AccountAddress
-	accountObj, err := sui_types.NewAddressFromHex("0x0000000000000000000000000000000000000000000000000000000000000000")
+	accountObj, err := sui_types.NewAddressFromHex(SuiZeroAddress)
 	if err != nil {
-		return nil, fmt.Errorf("sui_types.NewAddressFromHex %v", err)
+		return nil, err
 	}
 
 	txb, err := lib.NewBase64Data(txBytes)
 	if err != nil {
-		return nil, fmt.Errorf("lib.NewBase64Data %v", err)
+		return nil, err
 	}
 
 	return client.Provider.DevInspectTransactionBlock(client.ctx, *accountObj, *txb, nil, nil)
@@ -158,13 +147,13 @@ func (client *SuiClient) DevInspect(target string, args []interface{}, typeArgs 
 	ptb := client.NewProgrammableTransactionBlock(client.ctx)
 	_, err := ptb.NewMoveCall(target, args, typeArgs)
 	if err != nil {
-		return nil, fmt.Errorf("new move call failed %v", err)
+		return nil, err
 	}
 
 	tx := ptb.builder.Finish()
 	bcsBytes, err := bcs.Marshal(tx)
 	if err != nil {
-		return nil, fmt.Errorf("dev inspect failed, bcs marshal %v", err)
+		return nil, err
 	}
 	txBytes := append([]byte{0}, bcsBytes...)
 	return client.ImplementationOfDevInspect(base64.StdEncoding.EncodeToString(txBytes))

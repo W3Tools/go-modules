@@ -1,27 +1,29 @@
-package cryptography
+package cryptography_test
 
 import (
 	"testing"
+
+	"github.com/W3Tools/go-modules/gmsui/cryptography"
 )
 
 func TestSignatureSchemeToFlag(t *testing.T) {
 	tests := []struct {
 		name          string
-		scheme        SignatureScheme
-		expectedFlag  SignatureFlag
+		scheme        cryptography.SignatureScheme
+		expectedFlag  cryptography.SignatureFlag
 		expectingFail bool
 	}{
-		{"Ed25519", Ed25519Scheme, 0x00, false},
-		{"Secp256k1", Secp256k1Scheme, 0x01, false},
-		{"Secp256r1", Secp256r1Scheme, 0x02, false},
-		{"MultiSig", MultiSigScheme, 0x03, false},
-		{"ZkLogin", ZkLoginScheme, 0x05, false},
+		{"Ed25519", cryptography.Ed25519Scheme, 0x00, false},
+		{"Secp256k1", cryptography.Secp256k1Scheme, 0x01, false},
+		{"Secp256r1", cryptography.Secp256r1Scheme, 0x02, false},
+		{"MultiSig", cryptography.MultiSigScheme, 0x03, false},
+		{"ZkLogin", cryptography.ZkLoginScheme, 0x05, false},
 		{"UnknownScheme", "UnknownScheme", 0x00, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			flag, exists := SignatureSchemeToFlag[tt.scheme]
+			flag, exists := cryptography.SignatureSchemeToFlag[tt.scheme]
 			if tt.expectingFail {
 				if exists {
 					t.Errorf("expected failure, but got flag %v", flag)
@@ -38,19 +40,19 @@ func TestSignatureSchemeToFlag(t *testing.T) {
 func TestSignatureSchemeToSize(t *testing.T) {
 	tests := []struct {
 		name          string
-		scheme        SignatureScheme
+		scheme        cryptography.SignatureScheme
 		expectedSize  int
 		expectingFail bool
 	}{
-		{"Ed25519", Ed25519Scheme, 32, false},
-		{"Secp256k1", Secp256k1Scheme, 33, false},
-		{"Secp256r1", Secp256r1Scheme, 33, false},
+		{"Ed25519", cryptography.Ed25519Scheme, 32, false},
+		{"Secp256k1", cryptography.Secp256k1Scheme, 33, false},
+		{"Secp256r1", cryptography.Secp256r1Scheme, 33, false},
 		{"UnknownScheme", "UnknownScheme", 0, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			size, exists := SignatureSchemeToSize[tt.scheme]
+			size, exists := cryptography.SignatureSchemeToSize[tt.scheme]
 			if tt.expectingFail {
 				if exists {
 					t.Errorf("expected failure, but got size %v", size)
@@ -67,21 +69,21 @@ func TestSignatureSchemeToSize(t *testing.T) {
 func TestSignatureFlagToScheme(t *testing.T) {
 	tests := []struct {
 		name           string
-		flag           SignatureFlag
-		expectedScheme SignatureScheme
+		flag           cryptography.SignatureFlag
+		expectedScheme cryptography.SignatureScheme
 		expectingFail  bool
 	}{
-		{"Ed25519", 0x00, Ed25519Scheme, false},
-		{"Secp256k1", 0x01, Secp256k1Scheme, false},
-		{"Secp256r1", 0x02, Secp256r1Scheme, false},
-		{"MultiSig", 0x03, MultiSigScheme, false},
-		{"ZkLogin", 0x05, ZkLoginScheme, false},
+		{"Ed25519", 0x00, cryptography.Ed25519Scheme, false},
+		{"Secp256k1", 0x01, cryptography.Secp256k1Scheme, false},
+		{"Secp256r1", 0x02, cryptography.Secp256r1Scheme, false},
+		{"MultiSig", 0x03, cryptography.MultiSigScheme, false},
+		{"ZkLogin", 0x05, cryptography.ZkLoginScheme, false},
 		{"UnknownFlag", 0x04, "", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			scheme, exists := SignatureFlagToScheme[tt.flag]
+			scheme, exists := cryptography.SignatureFlagToScheme[tt.flag]
 			if tt.expectingFail {
 				if exists {
 					t.Errorf("expected failure, but got scheme %v", scheme)

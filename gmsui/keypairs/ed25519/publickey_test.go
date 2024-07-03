@@ -1,4 +1,4 @@
-package ed25519
+package ed25519_test
 
 import (
 	"reflect"
@@ -6,6 +6,7 @@ import (
 
 	gm "github.com/W3Tools/go-modules"
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
+	ed25519_keypair "github.com/W3Tools/go-modules/gmsui/keypairs/ed25519"
 	"github.com/fardream/go-bcs/bcs"
 )
 
@@ -57,7 +58,7 @@ func TestEd25519PublicKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.suiAddress, func(t *testing.T) {
-			publicKey, err := NewEd25519PublicKey(tt.publicKey)
+			publicKey, err := ed25519_keypair.NewEd25519PublicKey(tt.publicKey)
 			if err != nil {
 				t.Fatalf("Unable to NewEd25519PublicKey, msg: %v", err)
 			}

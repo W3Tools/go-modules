@@ -1,4 +1,4 @@
-package cryptography
+package cryptography_test
 
 import (
 	"bytes"
@@ -6,6 +6,8 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"testing"
+
+	"github.com/W3Tools/go-modules/gmsui/cryptography"
 )
 
 func TestEncodeAndDecodeSuiPrivateKey(t *testing.T) {
@@ -15,17 +17,17 @@ func TestEncodeAndDecodeSuiPrivateKey(t *testing.T) {
 	}
 
 	privateKeyBytes := privateKey.D.Bytes()
-	if len(privateKeyBytes) != PrivateKeySize {
+	if len(privateKeyBytes) != cryptography.PrivateKeySize {
 		t.Fatalf("expect private key size to be %d, got %d", privateKeyBytes, len(privateKeyBytes))
 	}
 
 	scheme := "ED25519"
-	encoded, err := EncodeSuiPrivateKey(privateKeyBytes, scheme)
+	encoded, err := cryptography.EncodeSuiPrivateKey(privateKeyBytes, scheme)
 	if err != nil {
 		t.Fatalf("failed to encode private key, msg: %v", err)
 	}
 
-	decoded, err := DecodeSuiPrivateKey(encoded)
+	decoded, err := cryptography.DecodeSuiPrivateKey(encoded)
 	if err != nil {
 		t.Fatalf("failed to decode sui private key, msg: %v", err)
 	}

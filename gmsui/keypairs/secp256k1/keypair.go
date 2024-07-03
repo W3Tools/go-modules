@@ -199,3 +199,11 @@ func parseHardenedIndex(part string) (uint32, error) {
 	}
 	return index + hdkeychain.HardenedKeyStart, nil
 }
+
+func (kp *Secp256k1Keypair) PublicKey() []byte {
+	return kp.keypair.PublicKey
+}
+
+func (kp *Secp256k1Keypair) SecretKey() []byte {
+	return kp.keypair.SecretKey
+}

@@ -1,7 +1,9 @@
-package b64
+package b64_test
 
 import (
 	"testing"
+
+	"github.com/W3Tools/go-modules/gmsui/b64"
 )
 
 func TestFromBase64(t *testing.T) {
@@ -27,7 +29,7 @@ func TestFromBase64(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := FromBase64(tt.base64String)
+			result, err := b64.FromBase64(tt.base64String)
 			if (err != nil) != tt.expectError {
 				t.Errorf("expected error: %v, got: %v", tt.expectError, err)
 			}
@@ -58,7 +60,7 @@ func TestToBase64(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ToBase64(tt.inputBytes)
+			result := b64.ToBase64(tt.inputBytes)
 			if result != tt.expectedBase64 {
 				t.Errorf("expected %v, but got %v", tt.expectedBase64, result)
 			}

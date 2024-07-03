@@ -150,11 +150,7 @@ func (multisig *MultiSigPublicKey) ToSuiAddress() string {
 	tmp := new(bytes.Buffer)
 	tmp.WriteByte(cryptography.SignatureSchemeToFlag[cryptography.MultiSigScheme])
 
-	threshold, err := bcs.Marshal(multisig.multisigPublicKey.Threshold)
-	if err != nil {
-		// TODO: throw an error?
-		return ""
-	}
+	threshold, _ := bcs.Marshal(multisig.multisigPublicKey.Threshold)
 	tmp.Write(threshold)
 
 	for _, publicKey := range multisig.publicKeys {
@@ -163,7 +159,7 @@ func (multisig *MultiSigPublicKey) ToSuiAddress() string {
 	}
 
 	sum256 := blake2b.Sum256(tmp.Bytes())
-	return utils.NormalizeShortAddress(hex.EncodeToString(sum256[:])[:64])
+	return utils.NormalizeShortSuiAddress(hex.EncodeToString(sum256[:])[:64])
 }
 
 // Return the byte array representation of the MultiSig public key

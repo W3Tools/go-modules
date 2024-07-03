@@ -1,4 +1,4 @@
-package secp256k1
+package secp256k1_test
 
 import (
 	"crypto/rand"
@@ -6,21 +6,22 @@ import (
 	"testing"
 
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
+	"github.com/W3Tools/go-modules/gmsui/keypairs/secp256k1"
 	"github.com/tyler-smith/go-bip39"
 )
 
 func TestGenerateAndVerifySecp256k1Keypair(t *testing.T) {
-	keypair, err := GenerateSecp256k1Keypair()
+	keypair, err := secp256k1.GenerateSecp256k1Keypair()
 	if err != nil {
 		t.Fatalf("unable to generate Secp256k1 keypair, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), cryptography.Secp256k1PublicKeySize) {
-		t.Errorf("expected public key size to be %d, but got %d", cryptography.Secp256k1PublicKeySize, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.PublicKey()), cryptography.Secp256k1PublicKeySize) {
+		t.Errorf("expected public key size to be %d, but got %d", cryptography.Secp256k1PublicKeySize, len(keypair.PublicKey()))
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.SecretKey), 32) {
-		t.Errorf("expected private key size to be %d, but got %d", 32, len(keypair.keypair.SecretKey))
+	if !reflect.DeepEqual(len(keypair.SecretKey()), 32) {
+		t.Errorf("expected private key size to be %d, but got %d", 32, len(keypair.SecretKey()))
 	}
 
 	if !reflect.DeepEqual(keypair.GetKeyScheme(), cryptography.Secp256k1Scheme) {
@@ -79,17 +80,17 @@ func TestFromSecretKeyAndVerifySecp256k1(t *testing.T) {
 		t.Fatalf("error generating random secret key: %v", err)
 	}
 
-	keypair, err := FromSecretKey(secretKey, false)
+	keypair, err := secp256k1.FromSecretKey(secretKey, false)
 	if err != nil {
 		t.Fatalf("unable to create Secp256k1 keypair from secret key, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), 33) {
-		t.Errorf("expected public key size to be %d, but got %d", 33, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.PublicKey()), 33) {
+		t.Errorf("expected public key size to be %d, but got %d", 33, len(keypair.PublicKey()))
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.SecretKey), 32) {
-		t.Errorf("expected private key size to be %d, but got %d", 32, len(keypair.keypair.SecretKey))
+	if !reflect.DeepEqual(len(keypair.SecretKey()), 32) {
+		t.Errorf("expected private key size to be %d, but got %d", 32, len(keypair.SecretKey()))
 	}
 
 	if !reflect.DeepEqual(keypair.GetKeyScheme(), cryptography.Secp256k1Scheme) {
@@ -136,17 +137,17 @@ func TestDeriveSecp256k1KeypairFromMnemonic(t *testing.T) {
 		t.Fatalf("unable to generate mnemonic, msg: %v", err)
 	}
 
-	keypair, err := DeriveKeypair(mnemonic, DefaultSecp256k1DerivationPath)
+	keypair, err := secp256k1.DeriveKeypair(mnemonic, secp256k1.DefaultSecp256k1DerivationPath)
 	if err != nil {
 		t.Fatalf("unable to derive Secp256k1 keypair, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), 33) {
-		t.Errorf("expected public key size to be %d, but got %d", 33, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.PublicKey()), 33) {
+		t.Errorf("expected public key size to be %d, but got %d", 33, len(keypair.PublicKey()))
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.SecretKey), 32) {
-		t.Errorf("expected private key size to be %d, but got %d", 32, len(keypair.keypair.SecretKey))
+	if !reflect.DeepEqual(len(keypair.SecretKey()), 32) {
+		t.Errorf("expected private key size to be %d, but got %d", 32, len(keypair.SecretKey()))
 	}
 
 	if !reflect.DeepEqual(keypair.GetKeyScheme(), cryptography.Secp256k1Scheme) {

@@ -137,3 +137,11 @@ func DeriveKeypairFromSeed(seedHex, path string) (*Ed25519Keypair, error) {
 	}
 	return FromSecretKey(key.Key, false)
 }
+
+func (kp *Ed25519Keypair) PublicKey() []byte {
+	return kp.keypair.PublicKey
+}
+
+func (kp *Ed25519Keypair) SecretKey() []byte {
+	return kp.keypair.SecretKey
+}
