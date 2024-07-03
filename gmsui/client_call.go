@@ -1,6 +1,7 @@
 package gmsui
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -18,21 +19,20 @@ func (client *SuiClient) GetFunctionArgumentTypes(target string) ([]interface{},
 	}
 	packageId, err := sui_types.NewObjectIdFromHex(entry[0])
 	if err != nil {
-		return nil, fmt.Errorf("get function argument types failed, invalid package id [%s], %v", entry[0], err)
+		return nil, err
 	}
 
 	var resp []interface{}
 	return resp, client.Provider.CallContext(client.ctx, &resp, sdk_client.SuiMethod("getMoveFunctionArgTypes"), packageId, entry[1], entry[2])
 }
 
-// GET OBJECT/MULTI_OBJECTS
-func (client *SuiClient) GetObject(objectId string) (*types.SuiObjectResponse, error) {
-	_objectId, err := sui_types.NewObjectIdFromHex(objectId)
+func GetObjectAndUnmarshal[T any](client *SuiClient, id string) (raw *types.SuiObjectResponse, value *T, err error) {
+	objectId, err := sui_types.NewObjectIdFromHex(id)
 	if err != nil {
-		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex %v", err)
+		return nil, nil, err
 	}
 
-	return client.Provider.GetObject(client.ctx, *_objectId, &types.SuiObjectDataOptions{
+	raw, err = client.Provider.GetObject(client.ctx, *objectId, &types.SuiObjectDataOptions{
 		ShowType:                true,
 		ShowContent:             true,
 		ShowBcs:                 true,
@@ -41,18 +41,33 @@ func (client *SuiClient) GetObject(objectId string) (*types.SuiObjectResponse, e
 		ShowStorageRebate:       true,
 		ShowDisplay:             true,
 	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	jsb, err := json.Marshal(raw.Data.Content.Data.MoveObject.Fields)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	value = new(T)
+	err = json.Unmarshal(jsb, &value)
+	if err != nil {
+		return nil, nil, err
+	}
+	return
 }
 
-func (client *SuiClient) GetObjects(objectIds []string) ([]types.SuiObjectResponse, error) {
-	ids, err := gm.Map(objectIds, func(v string) (move_types.AccountAddress, error) {
-		hex, err := sui_types.NewObjectIdFromHex(v)
-		return *hex, err
+func GetObjectsAndUnmarshal[T any](client *SuiClient, ids []string) (raw []types.SuiObjectResponse, values []*T, err error) {
+	objectIdArray, err := gm.Map(ids, func(v string) (move_types.AccountAddress, error) {
+		id, err := sui_types.NewObjectIdFromHex(v)
+		return *id, err
 	})
 	if err != nil {
-		return nil, fmt.Errorf("sui_types.NewObjectIdFromHex %v", err)
+		return nil, nil, err
 	}
 
-	return client.Provider.MultiGetObjects(client.ctx, ids, &types.SuiObjectDataOptions{
+	raw, err = client.Provider.MultiGetObjects(client.ctx, objectIdArray, &types.SuiObjectDataOptions{
 		ShowType:                true,
 		ShowContent:             true,
 		ShowBcs:                 true,
@@ -61,4 +76,47 @@ func (client *SuiClient) GetObjects(objectIds []string) ([]types.SuiObjectRespon
 		ShowStorageRebate:       true,
 		ShowDisplay:             true,
 	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, data := range raw {
+		jsb, err := json.Marshal(data.Data.Content.Data.MoveObject.Fields)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		var value = new(T)
+		err = json.Unmarshal(jsb, &value)
+		if err != nil {
+			return nil, nil, err
+		}
+		values = append(values, value)
+	}
+	return
+}
+
+func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *SuiClient, parentId string, name sui_types.DynamicFieldName) (raw *types.SuiObjectResponse, value *T, err error) {
+	parentIdHex, err := sui_types.NewObjectIdFromHex(parentId)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	raw, err = client.Provider.GetDynamicFieldObject(client.ctx, *parentIdHex, name)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	jsb, err := json.Marshal(raw.Data.Content.Data.MoveObject.Fields)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	data := new(SuiMoveDynamicField[T, NameType])
+	err = json.Unmarshal(jsb, &data)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return raw, &data.Value.Fields, nil
 }

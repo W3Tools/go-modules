@@ -108,7 +108,7 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 			if inputArgument == nil {
 				continue
 			}
-			objectInfo, err := ptb.client.GetObject(inputArgument.(string))
+			objectInfo, _, err := GetObjectAndUnmarshal[any](ptb.client, inputArgument.(string))
 			if err != nil {
 				return nil, fmt.Errorf("get object %s failed %v", inputArgument, err)
 			}
@@ -139,7 +139,7 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 			if inputArgument == nil {
 				continue
 			}
-			objectInfo, err := ptb.client.GetObject(inputArgument.(string))
+			objectInfo, _, err := GetObjectAndUnmarshal[any](ptb.client, inputArgument.(string))
 			if err != nil {
 				return nil, fmt.Errorf("get object %s failed %v", inputArgument, err)
 			}
@@ -212,7 +212,7 @@ func (ptb *ProgrammableTransactionBlock) FinishFromMultisig() ([]byte, error) {
 		return nil, fmt.Errorf("unable to finish ptb, invalid multisig")
 	}
 
-	return ptb.Finish(ptb.client.MultiSig.Address, &ptb.client.MultiSig.Gas.Live, ptb.client.GasBudget.Uint64(), nil)
+	return ptb.Finish(ptb.client.MultiSig.ToSuiAddress(), nil, ptb.client.GasBudget.Uint64(), nil)
 }
 
 func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string, gasBudget uint64, gasPrice *uint64) ([]byte, error) {
@@ -231,7 +231,7 @@ func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string
 			gasPayment = append(gasPayment, coin.Reference())
 		}
 	} else {
-		gasObjectId, err := ptb.client.GetObject(*gasObject)
+		gasObjectId, _, err := GetObjectAndUnmarshal[any](ptb.client, *gasObject)
 		if err != nil {
 			return nil, fmt.Errorf("finish ptb failed, get object %v", err)
 		}

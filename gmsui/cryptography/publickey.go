@@ -85,7 +85,7 @@ func (base *BasePublicKey) ToSuiBytes() []byte {
 // Return the Sui address associated with this Ed25519 public key
 func (base *BasePublicKey) ToSuiAddress() string {
 	digest := blake2b.Sum256(base.ToSuiBytes())
-	return utils.NormalizeAddress(hex.EncodeToString(digest[:])[:utils.SuiAddressLength*2])
+	return utils.NormalizeSuiAddress(hex.EncodeToString(digest[:])[:utils.SuiAddressLength*2])
 }
 
 // abstract: Return the byte array representation of the public key

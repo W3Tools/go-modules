@@ -23,13 +23,13 @@ type SuiMoveStringFields struct {
 	Name string `json:"name"`
 }
 
-type SuiMoveDynamicField[T any] struct {
-	Id    SuiMoveId                   `json:"id"`
-	Name  string                      `json:"name"`
-	Value SuiMoveDynamicFieldValue[T] `json:"value"`
+type SuiMoveDynamicField[TypeFields any, TypeName any] struct {
+	Id    SuiMoveId                            `json:"id"`
+	Name  TypeName                             `json:"name"`
+	Value SuiMoveDynamicFieldValue[TypeFields] `json:"value"`
 }
 
-type SuiMoveDynamicFieldValue[T any] struct {
-	Fields T      `json:"fields"`
-	Type   string `json:"type"`
+type SuiMoveDynamicFieldValue[TypeFields any] struct {
+	Fields TypeFields `json:"fields"`
+	Type   string     `json:"type"`
 }
