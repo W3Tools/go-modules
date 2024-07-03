@@ -1,9 +1,10 @@
-package cryptography
+package cryptography_test
 
 import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/W3Tools/go-modules/gmsui/cryptography"
 	"github.com/tyler-smith/go-bip39"
 )
 
@@ -27,7 +28,7 @@ func TestIsValidHardenedPath(t *testing.T) {
 	}
 
 	for _, path := range paths {
-		result := IsValidHardenedPath(path.input)
+		result := cryptography.IsValidHardenedPath(path.input)
 		if result != path.expected {
 			t.Errorf("IsValidHardenedPath(%s) returned %t, expected %t", path.input, result, path.expected)
 		}
@@ -54,7 +55,7 @@ func TestIsValidBIP32Path(t *testing.T) {
 	}
 
 	for _, path := range paths {
-		result := IsValidBIP32Path(path.input)
+		result := cryptography.IsValidBIP32Path(path.input)
 		if result != path.expected {
 			t.Errorf("IsValidBIP32Path(%s) returned %t, expected %t", path.input, result, path.expected)
 		}
@@ -72,7 +73,7 @@ func TestMnemonicToSeed(t *testing.T) {
 		t.Fatalf("failed to generate mnemonic: %v", err)
 	}
 
-	seed, err := MnemonicToSeed(validMnemonic)
+	seed, err := cryptography.MnemonicToSeed(validMnemonic)
 	if err != nil {
 		t.Errorf("expected mnemonic to be valid, got error: %v", err)
 	}
@@ -81,7 +82,7 @@ func TestMnemonicToSeed(t *testing.T) {
 	}
 
 	invalidMnemonic := "invalid mnemonic phrase that does not conform to BIP39"
-	_, err = MnemonicToSeed(invalidMnemonic)
+	_, err = cryptography.MnemonicToSeed(invalidMnemonic)
 	if err == nil {
 		t.Fatalf("mnemonic unable to seed, msg: %v", err)
 	}
@@ -98,14 +99,14 @@ func TestMnemonicToSeedHex(t *testing.T) {
 		t.Fatalf("GenerateMnemonic returned error: %v", err)
 	}
 
-	expectedSeed, err := MnemonicToSeed(mnemonic)
+	expectedSeed, err := cryptography.MnemonicToSeed(mnemonic)
 	if err != nil {
 		t.Fatalf("MnemonicToSeed returned error for valid mnemonic: %v", err)
 	}
 
 	expectedHex := hex.EncodeToString(expectedSeed)
 
-	hexSeed, err := MnemonicToSeedHex(mnemonic)
+	hexSeed, err := cryptography.MnemonicToSeedHex(mnemonic)
 	if err != nil {
 		t.Errorf("MnemonicToSeedHex returned error for valid mnemonic: %v", err)
 	}
@@ -114,7 +115,7 @@ func TestMnemonicToSeedHex(t *testing.T) {
 	}
 
 	invalidMnemonic := "invalid mnemonic"
-	_, err = MnemonicToSeedHex(invalidMnemonic)
+	_, err = cryptography.MnemonicToSeedHex(invalidMnemonic)
 	if err == nil {
 		t.Errorf("MnemonicToSeedHex did not return error for invalid mnemonic: %s", invalidMnemonic)
 	}

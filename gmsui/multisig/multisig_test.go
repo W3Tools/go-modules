@@ -1,4 +1,4 @@
-package multisig
+package multisig_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"github.com/W3Tools/go-modules/gmsui/b64"
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
 	"github.com/W3Tools/go-modules/gmsui/keypairs/ed25519"
+	"github.com/W3Tools/go-modules/gmsui/multisig"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 	keypair1          *ed25519.Ed25519PublicKey
 	keypair2          *ed25519.Ed25519PublicKey
 	keypair3          *ed25519.Ed25519PublicKey
-	multisigPublicKey *MultiSigPublicKey
+	multisigPublicKey *multisig.MultiSigPublicKey
 )
 
 func init() {
@@ -72,8 +73,8 @@ func init() {
 		keypair3.ToSuiAddress(), keypair3.Flag(), keypair3.ToRawBytes(), keypair3.ToBase64(), keypair3.ToSuiBytes(), keypair3.ToSuiPublicKey())
 	fmt.Println("")
 
-	multisigPublicKey, err = new(MultiSigPublicKey).FromPublicKeys(
-		[]PublicKeyWeightPair{
+	multisigPublicKey, err = new(multisig.MultiSigPublicKey).FromPublicKeys(
+		[]multisig.PublicKeyWeightPair{
 			{
 				PublicKey: keypair0,
 				Weight:    1,

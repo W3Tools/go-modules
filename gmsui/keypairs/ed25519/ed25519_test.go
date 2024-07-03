@@ -1,4 +1,4 @@
-package ed25519
+package ed25519_test
 
 import (
 	"crypto/ed25519"
@@ -7,28 +7,29 @@ import (
 	"testing"
 
 	"github.com/W3Tools/go-modules/gmsui/cryptography"
+	ed25519_keypair "github.com/W3Tools/go-modules/gmsui/keypairs/ed25519"
 	"github.com/tyler-smith/go-bip39"
 )
 
 func TestGenerateAndVerifyEd25519Keypair(t *testing.T) {
-	keypair, err := GenerateEd25519Keypair()
+	keypair, err := ed25519_keypair.GenerateEd25519Keypair()
 	if err != nil {
 		t.Fatalf("unable to generate Ed25519 keypair, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), cryptography.Ed25519PublicKeySize) {
-		t.Errorf("expected public key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.PublicKey()), cryptography.Ed25519PublicKeySize) {
+		t.Errorf("expected public key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.PublicKey()))
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.SecretKey), ed25519.PrivateKeySize) {
-		t.Errorf("expected private key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.SecretKey()), ed25519.PrivateKeySize) {
+		t.Errorf("expected private key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.PublicKey()))
 	}
 
 	if !reflect.DeepEqual(keypair.GetKeyScheme(), cryptography.Ed25519Scheme) {
 		t.Errorf("expected key scheme %v, but got %v", cryptography.Ed25519Scheme, keypair.GetKeyScheme())
 	}
 
-	publicKey, err := NewEd25519PublicKey(keypair.keypair.PublicKey)
+	publicKey, err := ed25519_keypair.NewEd25519PublicKey(keypair.PublicKey())
 	if err != nil {
 		t.Fatalf("unable to create Ed25519 public key, msg: %v", err)
 	}
@@ -80,24 +81,24 @@ func TestFromSecretKeyAndVerify(t *testing.T) {
 		t.Fatalf("error generating random secret key: %v", err)
 	}
 
-	keypair, err := FromSecretKey(seed, false)
+	keypair, err := ed25519_keypair.FromSecretKey(seed, false)
 	if err != nil {
 		t.Fatalf("unable to create Ed25519 keypair from seed, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), ed25519.PublicKeySize) {
-		t.Errorf("expected public key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.PublicKey()), ed25519.PublicKeySize) {
+		t.Errorf("expected public key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.PublicKey()))
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.SecretKey), ed25519.PrivateKeySize) {
-		t.Errorf("expected private key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.SecretKey()), ed25519.PrivateKeySize) {
+		t.Errorf("expected private key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.PublicKey()))
 	}
 
 	if !reflect.DeepEqual(keypair.GetKeyScheme(), cryptography.Ed25519Scheme) {
 		t.Errorf("expected key scheme %v, but got %v", cryptography.Ed25519Scheme, keypair.GetKeyScheme())
 	}
 
-	publicKey, err := NewEd25519PublicKey(keypair.keypair.PublicKey)
+	publicKey, err := ed25519_keypair.NewEd25519PublicKey(keypair.PublicKey())
 	if err != nil {
 		t.Fatalf("unable to create Ed25519 public key, msg: %v", err)
 	}
@@ -137,24 +138,24 @@ func TestDeriveKeypairFromMnemonic(t *testing.T) {
 		t.Fatalf("unable to generate mnemonic, msg: %v", err)
 	}
 
-	keypair, err := DeriveKeypair(mnemonic, DefaultEd25519DerivationPath)
+	keypair, err := ed25519_keypair.DeriveKeypair(mnemonic, ed25519_keypair.DefaultEd25519DerivationPath)
 	if err != nil {
 		t.Fatalf("unable to derive keypair, msg: %v", err)
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.PublicKey), ed25519.PublicKeySize) {
-		t.Errorf("expected public key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.PublicKey()), ed25519.PublicKeySize) {
+		t.Errorf("expected public key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.PublicKey()))
 	}
 
-	if !reflect.DeepEqual(len(keypair.keypair.SecretKey), ed25519.PrivateKeySize) {
-		t.Errorf("expected private key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.keypair.PublicKey))
+	if !reflect.DeepEqual(len(keypair.SecretKey()), ed25519.PrivateKeySize) {
+		t.Errorf("expected private key size to be %d, but got %d", ed25519.PublicKeySize, len(keypair.PublicKey()))
 	}
 
 	if !reflect.DeepEqual(keypair.GetKeyScheme(), cryptography.Ed25519Scheme) {
 		t.Errorf("expected key scheme %v, but got %v", cryptography.Ed25519Scheme, keypair.GetKeyScheme())
 	}
 
-	publicKey, err := NewEd25519PublicKey(keypair.keypair.PublicKey)
+	publicKey, err := ed25519_keypair.NewEd25519PublicKey(keypair.PublicKey())
 	if err != nil {
 		t.Fatalf("unable to create Ed25519 public key, msg: %v", err)
 	}

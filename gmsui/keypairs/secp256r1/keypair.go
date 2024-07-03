@@ -183,3 +183,11 @@ func deriveChildKeyFromPath(masterKey *bip32.Key, path string) (*bip32.Key, erro
 
 	return key, nil
 }
+
+func (kp *Secp256r1Keypair) PublicKey() []byte {
+	return kp.keypair.PublicKey
+}
+
+func (kp *Secp256r1Keypair) SecretKey() []byte {
+	return kp.keypair.SecretKey
+}
