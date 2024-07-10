@@ -39,6 +39,14 @@ func InitRedisFromURL(ctx context.Context, url string) (redisClient *RedisClient
 
 /*Base Commands*/
 // ------------------------------------------------------------------------------
+func (redisClient *RedisClient) Client() *redis.Client {
+	return redisClient.client
+}
+
+func (redisClient *RedisClient) DBSize() *redis.IntCmd {
+	return redisClient.client.DBSize(redisClient.Context)
+}
+
 func (redisClient *RedisClient) Keys(parttern string) *redis.StringSliceCmd {
 	return redisClient.client.Keys(redisClient.Context, parttern)
 }
@@ -101,6 +109,10 @@ type RedisTxPipeline struct {
 
 func (redisClient *RedisClient) NewTxPipeline() *RedisTxPipeline {
 	return &RedisTxPipeline{Context: redisClient.Context, tx: redisClient.client.TxPipeline()}
+}
+
+func (pipeline *RedisTxPipeline) Pipeliner() redis.Pipeliner {
+	return pipeline.tx
 }
 
 func (pipeline *RedisTxPipeline) Keys(parttern string) *redis.StringSliceCmd {
