@@ -47,6 +47,14 @@ func NewSuiClient(ctx context.Context, rpc string) (*SuiClient, error) {
 	return &SuiClient{ctx: ctx, rpc: rpc, requestId: 1, httpClient: httpClient}, nil
 }
 
+func (client *SuiClient) Context() context.Context {
+	return client.ctx
+}
+
+func (client *SuiClient) RPC() string {
+	return client.rpc
+}
+
 // Invoke any RPC method
 func (client *SuiClient) Call(method string, params []any, response any) error {
 	return client.request(SuiTransportRequestOptions{Method: method, Params: params}, &response)
