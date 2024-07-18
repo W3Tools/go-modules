@@ -175,3 +175,19 @@ func BytesEqual(a, b []byte) bool {
 	}
 	return true
 }
+
+type number interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
+}
+
+func NewNumber[T number](v T) T {
+	return v
+}
+
+func NewUint64[T number](v T) uint64 {
+	return uint64(v)
+}
+
+func NewStringPtr(v string) *string {
+	return &v
+}
