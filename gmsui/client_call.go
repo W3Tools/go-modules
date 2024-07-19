@@ -3,7 +3,9 @@ package gmsui
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
+	gm "github.com/W3Tools/go-modules"
 	"github.com/W3Tools/go-modules/gmsui/client"
 	"github.com/W3Tools/go-modules/gmsui/types"
 )
@@ -103,4 +105,56 @@ func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *client.SuiCl
 	}
 
 	return raw, &data.Value.Fields, nil
+}
+
+// Instance Get All Sui Coins
+func GetAllCoins(client *client.SuiClient, owner string, coinType string) (data []types.CoinStruct, err error) {
+	firstPage, err := client.GetCoins(types.GetCoinsParams{Owner: owner, CoinType: &coinType, Limit: gm.NewNumberPtr(1)})
+	if err != nil {
+		return
+	}
+	data = append(data, firstPage.Data...)
+
+	nextCursor := firstPage.NextCursor
+	hasNext := firstPage.HasNextPage
+	for hasNext {
+		nextPage, err := client.GetCoins(types.GetCoinsParams{Owner: owner, CoinType: &coinType, Limit: gm.NewNumberPtr(1), Cursor: nextCursor})
+		if err != nil {
+			break
+		}
+
+		nextCursor = nextPage.NextCursor
+		hasNext = nextPage.HasNextPage
+		data = append(data, nextPage.Data...)
+	}
+	return
+}
+
+func GetMaxCoinObject(client *client.SuiClient, owner, coinType string) (*types.CoinStruct, error) {
+	coins, err := GetAllCoins(client, owner, coinType)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(coins) == 0 {
+		return nil, fmt.Errorf("address: [%s], coins not found, type: %s", owner, coinType)
+	}
+
+	max := coins[0]
+	for _, coin := range coins {
+		balance, err := strconv.ParseUint(coin.Balance, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		maxBalance, err := strconv.ParseUint(max.Balance, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		if balance > maxBalance {
+			max = coin
+		}
+	}
+	return &max, nil
 }
