@@ -191,3 +191,7 @@ func NewUint64[T number](v T) uint64 {
 func NewStringPtr(v string) *string {
 	return &v
 }
+
+func NewNumberPtr[T number](v T) *T {
+	return &v
+}
