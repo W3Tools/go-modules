@@ -88,12 +88,32 @@ type PaginatedEvents struct {
 }
 
 type ProtocolConfig struct {
-	MinSupportedProtocolVersion string                 `json:"minSupportedProtocolVersion"`
-	MaxSupportedProtocolVersion string                 `json:"maxSupportedProtocolVersion"`
-	ProtocolVersion             string                 `json:"protocolVersion"`
-	FeatureFlags                map[string]bool        `json:"featureFlags"`
-	Attributes                  map[string]interface{} `json:"attributes"`
+	MinSupportedProtocolVersion string                         `json:"minSupportedProtocolVersion"`
+	MaxSupportedProtocolVersion string                         `json:"maxSupportedProtocolVersion"`
+	ProtocolVersion             string                         `json:"protocolVersion"`
+	FeatureFlags                map[string]bool                `json:"featureFlags"`
+	Attributes                  map[string]ProtocolConfigValue `json:"attributes"`
 }
+
+type ProtocolConfigValue interface {
+	isProtocolConfigValue()
+}
+
+type ProtocolConfigValue_u32 struct {
+	U32 string `json:"u32"`
+}
+
+type ProtocolConfigValue_u64 struct {
+	U64 string `json:"u64"`
+}
+
+type ProtocolConfigValue_f64 struct {
+	F64 string `json:"f64"`
+}
+
+func (ProtocolConfigValue_u32) isProtocolConfigValue() {}
+func (ProtocolConfigValue_u64) isProtocolConfigValue() {}
+func (ProtocolConfigValue_f64) isProtocolConfigValue() {}
 
 type Checkpoint struct {
 	Epoch                      string                 `json:"epoch"`
@@ -323,7 +343,7 @@ type SuiObjectData struct {
 	Version             string                 `json:"version"`
 	Digest              string                 `json:"digest"`
 	Type                *string                `json:"type,omitempty"`
-	Owner               *json.RawMessage       `json:"owner,omitempty"` // native type: ObjectOwner
+	Owner               *ObjectOwnerWrapper    `json:"owner,omitempty"`
 	PreviousTransaction *string                `json:"previousTransaction,omitempty"`
 	StorageRebate       *string                `json:"storageRebate,omitempty"`
 	Display             *DisplayFieldsResponse `json:"display,omitempty"`
@@ -331,6 +351,7 @@ type SuiObjectData struct {
 	Bcs                 *RawData               `json:"bcs,omitempty"`
 }
 
+// DisplayFieldsResponse
 type DisplayFieldsResponse struct {
 	Data  *map[string]string   `json:"data,omitempty"`
 	Error *ObjectResponseError `json:"error,omitempty"`
@@ -503,8 +524,8 @@ type TransactionBlockEffectsModifiedAtVersions struct {
 }
 
 type OwnedObjectRef struct {
-	Owner     interface{}  `json:"owner"` // native type: ObjectOwner
-	Reference SuiObjectRef `json:"reference"`
+	Owner     ObjectOwnerWrapper `json:"owner"`
+	Reference SuiObjectRef       `json:"reference"`
 }
 
 type SuiEvent struct {
@@ -524,23 +545,23 @@ type EventId struct {
 }
 
 type SuiObjectChange struct {
-	Type            string           `json:"type"`                      //
-	Sender          *string          `json:"sender,omitempty"`          // through transferred/mutated/deleted/wrapped/created
-	Recipient       *json.RawMessage `json:"recipient,omitempty"`       // through transferred/ native type: ObjectOwner
-	Owner           *json.RawMessage `json:"owner,omitempty"`           // through mutated/created native type: ObjectOwner
-	ObjectType      *string          `json:"objectType,omitempty"`      // through transferred/mutated/deleted/wrapped/created
-	ObjectId        *string          `json:"objectId,omitempty"`        // through transferred/mutated/deleted/wrapped/created
-	Version         string           `json:"version"`                   //
-	PreviousVersion *string          `json:"previousVersion,omitempty"` // through mutated/
-	Digest          *string          `json:"digest,omitempty"`          // through published/transferred/mutated/created
-	Modules         *[]string        `json:"modules,omitempty"`         // through published/
-	PackageId       *string          `json:"packageId,omitempty"`       // through published/
+	Type            string              `json:"type"`                      //
+	Sender          *string             `json:"sender,omitempty"`          // through transferred/mutated/deleted/wrapped/created
+	Recipient       *ObjectOwnerWrapper `json:"recipient,omitempty"`       // through transferred
+	Owner           *ObjectOwnerWrapper `json:"owner,omitempty"`           // through mutated/created
+	ObjectType      *string             `json:"objectType,omitempty"`      // through transferred/mutated/deleted/wrapped/created
+	ObjectId        *string             `json:"objectId,omitempty"`        // through transferred/mutated/deleted/wrapped/created
+	Version         string              `json:"version"`                   //
+	PreviousVersion *string             `json:"previousVersion,omitempty"` // through mutated/
+	Digest          *string             `json:"digest,omitempty"`          // through published/transferred/mutated/created
+	Modules         *[]string           `json:"modules,omitempty"`         // through published/
+	PackageId       *string             `json:"packageId,omitempty"`       // through published/
 }
 
 type BalanceChange struct {
-	Owner    interface{} `json:"owner"` // native type: ObjectOwner
-	CoinType string      `json:"coinType"`
-	Amount   string      `json:"amount"`
+	Owner    ObjectOwnerWrapper `json:"owner"`
+	CoinType string             `json:"coinType"`
+	Amount   string             `json:"amount"`
 }
 
 type EndOfEpochData struct {
