@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -51,4 +52,20 @@ func Ed25519PublicKeyToB64PublicKey(ed25519PubKey ed25519.PublicKey) string {
 	newPubkey := []byte{0}
 	newPubkey = append(newPubkey, ed25519PubKey...)
 	return base64.StdEncoding.EncodeToString(newPubkey)
+}
+
+func ParseDevInspectReturnValue(v [2]interface{}) ([]byte, error) {
+	// v[0] --> bcs data
+	// v[1] --> data type
+	jsb, err := json.Marshal(v[0])
+	if err != nil {
+		return nil, err
+	}
+
+	var bs []byte
+	err = json.Unmarshal(jsb, &bs)
+	if err != nil {
+		return nil, err
+	}
+	return bs, nil
 }

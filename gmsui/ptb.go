@@ -32,7 +32,7 @@ func NewProgrammableTransactionBlock(client *client.SuiClient) *ProgrammableTran
 func (ptb *ProgrammableTransactionBlock) NewMoveCall(target string, args []interface{}, typeArgs []string) (*sui_types.Argument, error) {
 	arguments, err := ptb.ParseFunctionArguments(target, args)
 	if err != nil {
-		return nil, fmt.Errorf("cli.ParseFunctionArgs %v", err)
+		return nil, err
 	}
 
 	typeArguments, err := ParseFunctionTypeArguments(typeArgs)
@@ -86,6 +86,7 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 		if err != nil {
 			return nil, fmt.Errorf("argument type json marshal failed %v", err)
 		}
+
 		switch string(stringType) {
 		case `"Pure"`:
 			var argument = sui_types.Argument{}

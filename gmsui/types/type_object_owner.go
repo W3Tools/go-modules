@@ -45,7 +45,7 @@ func (w *ObjectOwnerWrapper) UnmarshalJSON(data []byte) error {
 
 	if addressOwner, ok := obj["AddressOwner"]; ok {
 		var o ObjectOwner_AddressOwner
-		if err := json.Unmarshal(addressOwner, &o); err != nil {
+		if err := json.Unmarshal(addressOwner, &o.AddressOwner); err != nil {
 			return err
 		}
 		w.ObjectOwner = o
@@ -54,7 +54,7 @@ func (w *ObjectOwnerWrapper) UnmarshalJSON(data []byte) error {
 
 	if objectOwner, ok := obj["ObjectOwner"]; ok {
 		var o ObjectOwner_ObjectOwner
-		if err := json.Unmarshal(objectOwner, &o); err != nil {
+		if err := json.Unmarshal(objectOwner, &o.ObjectOwner); err != nil {
 			return err
 		}
 		w.ObjectOwner = o
