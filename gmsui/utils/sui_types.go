@@ -40,6 +40,10 @@ func NormalizeSuiAddress(v string) string {
 	address := strings.ToLower(v)
 	address = strings.TrimPrefix(address, "0x")
 
+	if len(address) > SuiAddressLength*2 {
+		return "0x" + address
+	}
+
 	return fmt.Sprintf("0x%s", strings.Repeat("0", SuiAddressLength*2-len(address))+address)
 }
 
