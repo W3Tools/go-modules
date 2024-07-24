@@ -27,7 +27,7 @@ type Balance struct {
 }
 
 type CoinMetadata struct {
-	Decimals    int    `json:"decimals"`
+	Decimals    uint8  `json:"decimals"`
 	Description string `json:"description"`
 	IconUrl     string `json:"iconUrl,omitempty"`
 	ID          string `json:"id,omitempty"`
