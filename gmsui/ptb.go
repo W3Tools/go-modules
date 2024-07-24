@@ -10,6 +10,7 @@ import (
 	gm "github.com/W3Tools/go-modules"
 	"github.com/W3Tools/go-modules/gmsui/client"
 	"github.com/W3Tools/go-modules/gmsui/types"
+	"github.com/W3Tools/go-modules/gmsui/utils"
 	"github.com/W3Tools/go-sui-sdk/v2/move_types"
 	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
 	"github.com/fardream/go-bcs/bcs"
@@ -81,6 +82,34 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 		return nil, fmt.Errorf("invalid arg length, required: %d, but got %d", len(functionArgumentTypes), len(args))
 	}
 
+	objectIds := []string{}
+	for idx, arg := range functionArgumentTypes {
+		jsb, err := json.Marshal(arg)
+		if err != nil {
+			return nil, err
+		}
+		if string(jsb) == `{"Object":"ByImmutableReference"}` || string(jsb) == `{"Object":"ByMutableReference"}` {
+			input, ok := args[idx].(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid object input, index %d, value: %v", idx, args[idx])
+			}
+			if !utils.IsHex(utils.NormalizeSuiObjectId(input)) {
+				return nil, fmt.Errorf("input data not object, index %d, value: %v", idx, input)
+			}
+
+			objectIds = append(objectIds, utils.NormalizeSuiObjectId(input))
+		}
+	}
+
+	inputObjects, _, err := GetObjectsAndUnmarshal[any](ptb.client, objectIds)
+	if err != nil {
+		return nil, err
+	}
+
+	// dd, _ := json.Marshal(inputObjects)
+	// fmt.Printf("ids: %v\n", string(dd))
+	// fmt.Printf("functionArgumentTypes: %v\n", functionArgumentTypes)
+
 	for idx, inputArgument := range args {
 		stringType, err := json.Marshal(functionArgumentTypes[idx])
 		if err != nil {
@@ -123,10 +152,11 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 			if strings.Contains(string(stringType), "ByMutableReference") {
 				mutable = true
 			}
-			objectInfo, _, err := GetObjectAndUnmarshal[any](ptb.client, inputArgument.(string))
-			if err != nil {
-				return nil, err
-			}
+
+			objectInfo := gm.FilterOne(*inputObjects, func(v types.SuiObjectResponse) bool {
+				return v.Data.ObjectId == utils.NormalizeSuiObjectId(inputArgument.(string))
+			})
+
 			var objectArgs sui_types.ObjectArg
 			if objectInfo.Data.Owner != nil {
 				owner := *objectInfo.Data.Owner
