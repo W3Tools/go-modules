@@ -4,31 +4,35 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
+	gm "github.com/W3Tools/go-modules"
+	"github.com/W3Tools/go-modules/gmsui/client"
+	"github.com/W3Tools/go-modules/gmsui/types"
 	"github.com/W3Tools/go-sui-sdk/v2/move_types"
 	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
 	"github.com/fardream/go-bcs/bcs"
 )
 
 type ProgrammableTransactionBlock struct {
-	client  *SuiClient
+	client  *client.SuiClient
 	builder *sui_types.ProgrammableTransactionBuilder
 	ctx     context.Context
 }
 
-func (client *SuiClient) NewProgrammableTransactionBlock(ctx context.Context) *ProgrammableTransactionBlock {
+func NewProgrammableTransactionBlock(client *client.SuiClient) *ProgrammableTransactionBlock {
 	return &ProgrammableTransactionBlock{
 		client:  client,
 		builder: sui_types.NewProgrammableTransactionBuilder(),
-		ctx:     ctx,
+		ctx:     client.Context(),
 	}
 }
 
 func (ptb *ProgrammableTransactionBlock) NewMoveCall(target string, args []interface{}, typeArgs []string) (*sui_types.Argument, error) {
 	arguments, err := ptb.ParseFunctionArguments(target, args)
 	if err != nil {
-		return nil, fmt.Errorf("cli.ParseFunctionArgs %v", err)
+		return nil, err
 	}
 
 	typeArguments, err := ParseFunctionTypeArguments(typeArgs)
@@ -61,9 +65,14 @@ func (ptb *ProgrammableTransactionBlock) NewMoveCall(target string, args []inter
 
 // txContext should be nil
 func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, args []interface{}) (arguments []sui_types.Argument, err error) {
-	functionArgumentTypes, err := ptb.client.GetFunctionArgumentTypes(target)
+	entry := strings.Split(target, "::")
+	if len(entry) != 3 {
+		return nil, fmt.Errorf("invalid target [%s]", target)
+	}
+
+	functionArgumentTypes, err := ptb.client.GetMoveFunctionArgTypes(types.GetMoveFunctionArgTypesParams{Package: entry[0], Module: entry[1], Function: entry[2]})
 	if err != nil {
-		return nil, fmt.Errorf("get function argument types failed %v", err)
+		return nil, err
 	}
 	if len(functionArgumentTypes) > 0 && args == nil {
 		return nil, fmt.Errorf("invalid arg length, required: %d, but got nil", len(functionArgumentTypes))
@@ -77,6 +86,7 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 		if err != nil {
 			return nil, fmt.Errorf("argument type json marshal failed %v", err)
 		}
+
 		switch string(stringType) {
 		case `"Pure"`:
 			var argument = sui_types.Argument{}
@@ -104,66 +114,64 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 				}
 			}
 			arguments = append(arguments, argument)
-		case `{"Object":"ByMutableReference"}`:
+		case `{"Object":"ByMutableReference"}`, `{"Object":"ByImmutableReference"}`:
 			if inputArgument == nil {
 				continue
 			}
-			objectInfo, _, err := GetObjectAndUnmarshal[any](ptb.client, inputArgument.(string))
-			if err != nil {
-				return nil, fmt.Errorf("get object %s failed %v", inputArgument, err)
-			}
-			var objectArgs sui_types.ObjectArg
-			if objectInfo.Data.Owner.Shared == nil {
-				objectArgs.ImmOrOwnedObject = &sui_types.ObjectRef{
-					ObjectId: objectInfo.Data.ObjectId,
-					Version:  objectInfo.Data.Version.Uint64(),
-					Digest:   objectInfo.Data.Digest,
-				}
-			} else {
-				objectArgs.SharedObject = &struct {
-					Id                   move_types.AccountAddress
-					InitialSharedVersion uint64
-					Mutable              bool
-				}{
-					Id:                   objectInfo.Data.ObjectId,
-					InitialSharedVersion: *objectInfo.Data.Owner.Shared.InitialSharedVersion,
-					Mutable:              true,
-				}
-			}
-			pureData, err := ptb.builder.Obj(objectArgs)
-			if err != nil {
-				return nil, fmt.Errorf("input argument to pure object failed %v", err)
-			}
-			arguments = append(arguments, pureData)
-		case `{"Object":"ByImmutableReference"}`:
-			if inputArgument == nil {
-				continue
+
+			mutable := false
+			if strings.Contains(string(stringType), "ByMutableReference") {
+				mutable = true
 			}
 			objectInfo, _, err := GetObjectAndUnmarshal[any](ptb.client, inputArgument.(string))
 			if err != nil {
-				return nil, fmt.Errorf("get object %s failed %v", inputArgument, err)
+				return nil, err
 			}
 			var objectArgs sui_types.ObjectArg
-			if objectInfo.Data.Owner.Shared == nil {
-				objectArgs.ImmOrOwnedObject = &sui_types.ObjectRef{
-					ObjectId: objectInfo.Data.ObjectId,
-					Version:  objectInfo.Data.Version.Uint64(),
-					Digest:   objectInfo.Data.Digest,
-				}
-			} else {
-				objectArgs.SharedObject = &struct {
-					Id                   move_types.AccountAddress
-					InitialSharedVersion uint64
-					Mutable              bool
-				}{
-					Id:                   objectInfo.Data.ObjectId,
-					InitialSharedVersion: *objectInfo.Data.Owner.Shared.InitialSharedVersion,
-					Mutable:              false,
+			if objectInfo.Data.Owner != nil {
+				owner := *objectInfo.Data.Owner
+				sharedObject, isSharedObject := owner.ObjectOwner.(types.ObjectOwner_Shared)
+				if isSharedObject {
+					objectId, err := sui_types.NewObjectIdFromHex(objectInfo.Data.ObjectId)
+					if err != nil {
+						return nil, err
+					}
+					objectArgs.SharedObject = &struct {
+						Id                   move_types.AccountAddress
+						InitialSharedVersion uint64
+						Mutable              bool
+					}{
+						Id:                   *objectId,
+						InitialSharedVersion: sharedObject.Shared.InitialSharedVersion,
+						Mutable:              mutable,
+					}
+				} else {
+					objectId, err := sui_types.NewObjectIdFromHex(objectInfo.Data.ObjectId)
+					if err != nil {
+						return nil, err
+					}
+
+					version, err := strconv.ParseUint(objectInfo.Data.Version, 10, 64)
+					if err != nil {
+						return nil, err
+					}
+
+					digest, err := sui_types.NewDigest(objectInfo.Data.Digest)
+					if err != nil {
+						return nil, err
+					}
+
+					objectArgs.ImmOrOwnedObject = &sui_types.ObjectRef{
+						ObjectId: *objectId,
+						Version:  version,
+						Digest:   *digest,
+					}
 				}
 			}
+
 			pureData, err := ptb.builder.Obj(objectArgs)
 			if err != nil {
-				return nil, fmt.Errorf("input argument to pure object failed %v", err)
+				return nil, err
 			}
 			arguments = append(arguments, pureData)
 		default:
@@ -199,49 +207,75 @@ func ParseFunctionTypeArguments(typeArgs []string) (typeArguments []move_types.T
 	return
 }
 
-func (ptb *ProgrammableTransactionBlock) FinishFromSigner() ([]byte, error) {
-	if ptb.client.Keypair == nil {
-		return nil, fmt.Errorf("unable to finish ptb, invalid signer")
-	}
-
-	return ptb.Finish(ptb.client.Keypair.ToSuiAddress(), nil, ptb.client.GasBudget.Uint64(), nil)
-}
-
-func (ptb *ProgrammableTransactionBlock) FinishFromMultisig() ([]byte, error) {
-	if ptb.client.MultiSig == nil {
-		return nil, fmt.Errorf("unable to finish ptb, invalid multisig")
-	}
-
-	return ptb.Finish(ptb.client.MultiSig.ToSuiAddress(), nil, ptb.client.GasBudget.Uint64(), nil)
-}
-
 func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string, gasBudget uint64, gasPrice *uint64) ([]byte, error) {
 	hexSender, err := sui_types.NewAddressFromHex(sender)
 	if err != nil {
-		return nil, fmt.Errorf("finish ptb failed, %s can not convert to address hex %v", sender, err)
+		return nil, err
 	}
 
 	gasPayment := []*sui_types.ObjectRef{}
 	if gasObject == nil {
-		coins, err := ptb.client.GetCoins(sender, SuiGasCoinType, nil)
+		coins, err := ptb.client.GetCoins(types.GetCoinsParams{
+			Owner:    sender,
+			CoinType: gm.NewStringPtr(SuiGasCoinType),
+		})
 		if err != nil {
-			return nil, fmt.Errorf("finish ptb failed, get coins %v", err)
+			return nil, err
 		}
+
 		for _, coin := range coins.Data {
-			gasPayment = append(gasPayment, coin.Reference())
+			digest, err := sui_types.NewDigest(coin.Digest)
+			if err != nil {
+				return nil, err
+			}
+
+			uint64Version, err := strconv.ParseUint(coin.Version, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			objectId, err := sui_types.NewObjectIdFromHex(coin.CoinObjectId)
+			if err != nil {
+				return nil, err
+			}
+			reference := sui_types.ObjectRef{
+				Digest:   *digest,
+				Version:  uint64Version,
+				ObjectId: *objectId,
+			}
+			gasPayment = append(gasPayment, &reference)
 		}
 	} else {
 		gasObjectId, _, err := GetObjectAndUnmarshal[any](ptb.client, *gasObject)
 		if err != nil {
-			return nil, fmt.Errorf("finish ptb failed, get object %v", err)
+			return nil, err
 		}
-		gasReference := gasObjectId.Data.Reference()
+
+		digest, err := sui_types.NewDigest(gasObjectId.Data.Digest)
+		if err != nil {
+			return nil, err
+		}
+
+		uint64Version, err := strconv.ParseUint(gasObjectId.Data.Version, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		objectId, err := sui_types.NewObjectIdFromHex(gasObjectId.Data.ObjectId)
+		if err != nil {
+			return nil, err
+		}
+		gasReference := sui_types.ObjectRef{
+			Digest:   *digest,
+			Version:  uint64Version,
+			ObjectId: *objectId,
+		}
 		gasPayment = append(gasPayment, &gasReference)
 	}
 
 	var referenceGasPrice uint64
 	if gasPrice == nil {
-		refGasPrice, err := ptb.client.Provider.GetReferenceGasPrice(ptb.client.ctx)
+		refGasPrice, err := ptb.client.GetReferenceGasPrice()
 		if err != nil {
 			return nil, err
 		}
@@ -264,7 +298,7 @@ func (ptb *ProgrammableTransactionBlock) Builder() *sui_types.ProgrammableTransa
 	return ptb.builder
 }
 
-func (ptb *ProgrammableTransactionBlock) Client() *SuiClient {
+func (ptb *ProgrammableTransactionBlock) Client() *client.SuiClient {
 	return ptb.client
 }
 

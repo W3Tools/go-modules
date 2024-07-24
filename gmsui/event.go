@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/W3Tools/go-sui-sdk/v2/move_types"
-	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
-	"github.com/W3Tools/go-sui-sdk/v2/types"
+	"github.com/W3Tools/go-modules/gmsui/types"
 )
 
 // Define the type as MoveModule/MoveEventModule. Events emitted, defined on the specified Move module.
@@ -22,14 +20,6 @@ func (ec *MoveEventModuleConfig) Join() string {
 
 func (ec *MoveEventModuleConfig) JoinEventName(name string) string {
 	return fmt.Sprintf("%s::%s::%s", ec.Package, ec.Module, name)
-}
-
-func (ec *MoveEventModuleConfig) PackageToAddress() *move_types.AccountAddress {
-	address, err := sui_types.NewObjectIdFromHex(ec.Package)
-	if err != nil {
-		return nil
-	}
-	return address
 }
 
 // Parsing custom event json

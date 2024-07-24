@@ -13,10 +13,6 @@ type RedisClient struct {
 	client  *redis.Client
 }
 
-type number interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64
-}
-
 func InitRedis[T number](ctx context.Context, username, password, address string, db T) (redisClient *RedisClient, err error) {
 	return InitRedisFromURL(ctx, fmt.Sprintf("redis://%s:%s@%s/%d", username, password, address, db))
 }

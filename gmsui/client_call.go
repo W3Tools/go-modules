@@ -3,111 +3,97 @@ package gmsui
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
+	"strconv"
 
 	gm "github.com/W3Tools/go-modules"
-	sdk_client "github.com/W3Tools/go-sui-sdk/v2/client"
-	"github.com/W3Tools/go-sui-sdk/v2/move_types"
-	"github.com/W3Tools/go-sui-sdk/v2/sui_types"
-	"github.com/W3Tools/go-sui-sdk/v2/types"
+	"github.com/W3Tools/go-modules/gmsui/client"
+	"github.com/W3Tools/go-modules/gmsui/types"
 )
 
-func (client *SuiClient) GetFunctionArgumentTypes(target string) ([]interface{}, error) {
-	entry := strings.Split(target, "::")
-	if len(entry) != 3 {
-		return nil, fmt.Errorf("invalid target [%s]", target)
-	}
-	packageId, err := sui_types.NewObjectIdFromHex(entry[0])
-	if err != nil {
-		return nil, err
-	}
-
-	var resp []interface{}
-	return resp, client.Provider.CallContext(client.ctx, &resp, sdk_client.SuiMethod("getMoveFunctionArgTypes"), packageId, entry[1], entry[2])
-}
-
-func GetObjectAndUnmarshal[T any](client *SuiClient, id string) (raw *types.SuiObjectResponse, value *T, err error) {
-	objectId, err := sui_types.NewObjectIdFromHex(id)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	raw, err = client.Provider.GetObject(client.ctx, *objectId, &types.SuiObjectDataOptions{
-		ShowType:                true,
-		ShowContent:             true,
-		ShowBcs:                 true,
-		ShowOwner:               true,
-		ShowPreviousTransaction: true,
-		ShowStorageRebate:       true,
-		ShowDisplay:             true,
+func GetObjectAndUnmarshal[T any](client *client.SuiClient, id string) (raw *types.SuiObjectResponse, value *T, err error) {
+	raw, err = client.GetObject(types.GetObjectParams{
+		ID: id,
+		Options: &types.SuiObjectDataOptions{
+			ShowType:                true,
+			ShowContent:             true,
+			ShowBcs:                 true,
+			ShowOwner:               true,
+			ShowPreviousTransaction: true,
+			ShowStorageRebate:       true,
+			ShowDisplay:             true,
+		},
 	})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	jsb, err := json.Marshal(raw.Data.Content.Data.MoveObject.Fields)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	value = new(T)
-	err = json.Unmarshal(jsb, &value)
-	if err != nil {
-		return nil, nil, err
-	}
-	return
-}
-
-func GetObjectsAndUnmarshal[T any](client *SuiClient, ids []string) (raw []types.SuiObjectResponse, values []*T, err error) {
-	objectIdArray, err := gm.Map(ids, func(v string) (move_types.AccountAddress, error) {
-		id, err := sui_types.NewObjectIdFromHex(v)
-		return *id, err
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	raw, err = client.Provider.MultiGetObjects(client.ctx, objectIdArray, &types.SuiObjectDataOptions{
-		ShowType:                true,
-		ShowContent:             true,
-		ShowBcs:                 true,
-		ShowOwner:               true,
-		ShowPreviousTransaction: true,
-		ShowStorageRebate:       true,
-		ShowDisplay:             true,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	for _, data := range raw {
-		jsb, err := json.Marshal(data.Data.Content.Data.MoveObject.Fields)
+	switch raw.Data.Content.DataType {
+	case types.Package:
+		return nil, nil, fmt.Errorf("unimplemented %s, expected an object id, not package id", types.Package)
+	case types.MoveObject:
+		jsb, err := json.Marshal(raw.Data.Content.Fields)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		var value = new(T)
+		value = new(T)
 		err = json.Unmarshal(jsb, &value)
 		if err != nil {
 			return nil, nil, err
 		}
-		values = append(values, value)
+		return raw, value, err
+	default:
+		return nil, nil, fmt.Errorf("unknown data type %s, expected an object id", raw.Data.Content.DataType)
+	}
+}
+
+func GetObjectsAndUnmarshal[T any](client *client.SuiClient, ids []string) (raw *[]types.SuiObjectResponse, values []*T, err error) {
+	raw, err = client.MultiGetObjects(types.MultiGetObjectsParams{
+		IDs: ids,
+		Options: &types.SuiObjectDataOptions{
+			ShowType:                true,
+			ShowContent:             true,
+			ShowBcs:                 true,
+			ShowOwner:               true,
+			ShowPreviousTransaction: true,
+			ShowStorageRebate:       true,
+			ShowDisplay:             true,
+		},
+	})
+
+	for _, data := range *raw {
+		switch data.Data.Content.DataType {
+		case types.Package:
+			return nil, nil, fmt.Errorf("unimplemented %s, %s expected an object id, not package id", types.Package, data.Data.ObjectId)
+		case types.MoveObject:
+			jsb, err := json.Marshal(data.Data.Content.Fields)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			var value = new(T)
+			err = json.Unmarshal(jsb, &value)
+			if err != nil {
+				return nil, nil, err
+			}
+			values = append(values, value)
+		default:
+			return nil, nil, fmt.Errorf("unknown data type %s, %s expected an object id", data.Data.Content.DataType, data.Data.ObjectId)
+		}
 	}
 	return
 }
 
-func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *SuiClient, parentId string, name sui_types.DynamicFieldName) (raw *types.SuiObjectResponse, value *T, err error) {
-	parentIdHex, err := sui_types.NewObjectIdFromHex(parentId)
+func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *client.SuiClient, parentId string, name types.DynamicFieldName) (raw *types.SuiObjectResponse, value *T, err error) {
+	raw, err = client.GetDynamicFieldObject(types.GetDynamicFieldObjectParams{
+		ParentId: parentId,
+		Name:     name,
+	})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	raw, err = client.Provider.GetDynamicFieldObject(client.ctx, *parentIdHex, name)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	jsb, err := json.Marshal(raw.Data.Content.Data.MoveObject.Fields)
+	jsb, err := json.Marshal(raw.Data.Content.Fields)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -119,4 +105,56 @@ func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *SuiClient, p
 	}
 
 	return raw, &data.Value.Fields, nil
+}
+
+// Instance Get All Sui Coins
+func GetAllCoins(client *client.SuiClient, owner string, coinType string) (data []types.CoinStruct, err error) {
+	firstPage, err := client.GetCoins(types.GetCoinsParams{Owner: owner, CoinType: &coinType, Limit: gm.NewNumberPtr(1)})
+	if err != nil {
+		return
+	}
+	data = append(data, firstPage.Data...)
+
+	nextCursor := firstPage.NextCursor
+	hasNext := firstPage.HasNextPage
+	for hasNext {
+		nextPage, err := client.GetCoins(types.GetCoinsParams{Owner: owner, CoinType: &coinType, Limit: gm.NewNumberPtr(1), Cursor: nextCursor})
+		if err != nil {
+			break
+		}
+
+		nextCursor = nextPage.NextCursor
+		hasNext = nextPage.HasNextPage
+		data = append(data, nextPage.Data...)
+	}
+	return
+}
+
+func GetMaxCoinObject(client *client.SuiClient, owner, coinType string) (*types.CoinStruct, error) {
+	coins, err := GetAllCoins(client, owner, coinType)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(coins) == 0 {
+		return nil, fmt.Errorf("address: [%s], coins not found, type: %s", owner, coinType)
+	}
+
+	max := coins[0]
+	for _, coin := range coins {
+		balance, err := strconv.ParseUint(coin.Balance, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		maxBalance, err := strconv.ParseUint(max.Balance, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		if balance > maxBalance {
+			max = coin
+		}
+	}
+	return &max, nil
 }

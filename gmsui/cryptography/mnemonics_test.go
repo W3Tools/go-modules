@@ -122,12 +122,7 @@ func TestMnemonicToSeedHex(t *testing.T) {
 }
 
 func TestGenerateMnemonic(t *testing.T) {
-	entropy, err := bip39.NewEntropy(128)
-	if err != nil {
-		t.Fatalf("failed to new entropy, msg: %v", err)
-	}
-
-	mnemonic, err := bip39.NewMnemonic(entropy)
+	mnemonic, err := cryptography.GenerateMnemonic()
 	if err != nil {
 		t.Errorf("GenerateMnemonic returned error: %v", err)
 	}
