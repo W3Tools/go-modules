@@ -80,6 +80,10 @@ func (client *SuiClient) GetCoins(input types.GetCoinsParams) (response *types.P
 		return nil, fmt.Errorf("invalid sui address")
 	}
 
+	if input.CoinType != nil || *input.CoinType != "" {
+		input.CoinType = gm.NewStringPtr(utils.NormalizeSuiCoinType(*input.CoinType))
+	}
+
 	return response, client.request(
 		SuiTransportRequestOptions{
 			Method: "suix_getCoins",
@@ -110,6 +114,10 @@ func (client *SuiClient) GetBalance(input types.GetBalanceParams) (response *typ
 		return nil, fmt.Errorf("invalid sui address")
 	}
 
+	if input.CoinType != nil || *input.CoinType != "" {
+		input.CoinType = gm.NewStringPtr(utils.NormalizeSuiCoinType(*input.CoinType))
+	}
+
 	return response, client.request(
 		SuiTransportRequestOptions{
 			Method: "suix_getBalance",
@@ -136,6 +144,10 @@ func (client *SuiClient) GetAllBalances(input types.GetAllBalancesParams) (respo
 
 // Fetch CoinMetadata for a given coin type
 func (client *SuiClient) GetCoinMetadata(input types.GetCoinMetadataParams) (response *types.CoinMetadata, err error) {
+	if input.CoinType != "" {
+		input.CoinType = utils.NormalizeSuiCoinType(input.CoinType)
+	}
+
 	return response, client.request(
 		SuiTransportRequestOptions{
 			Method: "suix_getCoinMetadata",
@@ -147,6 +159,10 @@ func (client *SuiClient) GetCoinMetadata(input types.GetCoinMetadataParams) (res
 
 // Fetch total supply for a coin
 func (client *SuiClient) GetTotalSupply(input types.GetTotalSupplyParams) (response *types.CoinSupply, err error) {
+	if input.CoinType != "" {
+		input.CoinType = utils.NormalizeSuiCoinType(input.CoinType)
+	}
+
 	return response, client.request(
 		SuiTransportRequestOptions{
 			Method: "suix_getTotalSupply",
