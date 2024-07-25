@@ -237,10 +237,10 @@ func ParseFunctionTypeArguments(typeArgs []string) (typeArguments []move_types.T
 	return
 }
 
-func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string, gasBudget uint64, gasPrice *uint64) ([]byte, error) {
+func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string, gasBudget uint64, gasPrice *uint64) (*sui_types.TransactionData, []byte, error) {
 	hexSender, err := sui_types.NewAddressFromHex(sender)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	gasPayment := []*sui_types.ObjectRef{}
@@ -250,23 +250,23 @@ func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string
 			CoinType: gm.NewStringPtr(SuiGasCoinType),
 		})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		for _, coin := range coins.Data {
 			digest, err := sui_types.NewDigest(coin.Digest)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			uint64Version, err := strconv.ParseUint(coin.Version, 10, 64)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			objectId, err := sui_types.NewObjectIdFromHex(coin.CoinObjectId)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			reference := sui_types.ObjectRef{
 				Digest:   *digest,
@@ -278,22 +278,22 @@ func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string
 	} else {
 		gasObjectId, _, err := GetObjectAndUnmarshal[any](ptb.client, *gasObject)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		digest, err := sui_types.NewDigest(gasObjectId.Data.Digest)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		uint64Version, err := strconv.ParseUint(gasObjectId.Data.Version, 10, 64)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		objectId, err := sui_types.NewObjectIdFromHex(gasObjectId.Data.ObjectId)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		gasReference := sui_types.ObjectRef{
 			Digest:   *digest,
@@ -307,7 +307,7 @@ func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string
 	if gasPrice == nil {
 		refGasPrice, err := ptb.client.GetReferenceGasPrice()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		referenceGasPrice = refGasPrice.Uint64() + 1
 	} else {
@@ -321,7 +321,8 @@ func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string
 		gasBudget,
 		referenceGasPrice,
 	)
-	return bcs.Marshal(tx)
+	bs, err := bcs.Marshal(tx)
+	return &tx, bs, err
 }
 
 func (ptb *ProgrammableTransactionBlock) Builder() *sui_types.ProgrammableTransactionBuilder {
