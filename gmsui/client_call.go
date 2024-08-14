@@ -84,7 +84,7 @@ func GetObjectsAndUnmarshal[T any](client *client.SuiClient, ids []string) (raw 
 	return
 }
 
-func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *client.SuiClient, parentId string, name types.DynamicFieldName) (raw *types.SuiObjectResponse, value *T, err error) {
+func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *client.SuiClient, parentId string, name types.DynamicFieldName) (raw *types.SuiObjectResponse, value *SuiMoveDynamicField[T, NameType], err error) {
 	raw, err = client.GetDynamicFieldObject(types.GetDynamicFieldObjectParams{
 		ParentId: parentId,
 		Name:     name,
@@ -104,7 +104,7 @@ func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *client.SuiCl
 		return nil, nil, err
 	}
 
-	return raw, &data.Value.Fields, nil
+	return raw, data, nil
 }
 
 // Instance Get All Sui Coins
