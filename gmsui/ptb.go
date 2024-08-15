@@ -89,6 +89,9 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 			return nil, err
 		}
 		if string(jsb) == `{"Object":"ByImmutableReference"}` || string(jsb) == `{"Object":"ByMutableReference"}` {
+			if args[idx] == nil {
+				continue
+			}
 			input, ok := args[idx].(string)
 			if !ok {
 				return nil, fmt.Errorf("invalid object input, index %d, value: %v", idx, args[idx])
