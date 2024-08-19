@@ -40,8 +40,8 @@ type CoinSupply struct {
 }
 
 type SuiObjectResponse struct {
-	Data  *SuiObjectData           `json:"data,omitempty"`
-	Error *ObjectResponseErrorCode `json:"error,omitempty"`
+	Data  *SuiObjectData              `json:"data,omitempty"`
+	Error *ObjectResponseErrorWrapper `json:"error,omitempty"`
 }
 
 type PaginatedObjectsResponse struct {
@@ -321,15 +321,6 @@ type DevInspectResults struct {
 	Results []SuiExecutionResult `json:"results,omitempty"`
 }
 
-type ObjectResponseErrorCode struct {
-	Code           string `jons:"code"`
-	ObjectId       string `json:"object_id,omitempty"`
-	ParentObjectId string `json:"parent_object_id,omitempty"`
-	Digest         string `json:"digest"`
-	Version        string `json:"version"`
-	Error          string `json:"error"`
-}
-
 type SuiObjectData struct {
 	ObjectId            string                 `json:"objectId"`
 	Version             string                 `json:"version"`
@@ -345,8 +336,8 @@ type SuiObjectData struct {
 
 // DisplayFieldsResponse
 type DisplayFieldsResponse struct {
-	Data  *map[string]string       `json:"data,omitempty"`
-	Error *ObjectResponseErrorCode `json:"error,omitempty"`
+	Data  *map[string]string          `json:"data,omitempty"`
+	Error *ObjectResponseErrorWrapper `json:"error,omitempty"`
 }
 
 type SuiParsedData struct {
@@ -369,7 +360,7 @@ type RawData struct {
 	Id                string                 `json:"id,omitempty"`                // through package
 	Type              string                 `json:"type,omitempty"`              // through moveObject
 	HasPublicTransfer *bool                  `json:"hasPublicTransfer,omitempty"` // through moveObject
-	Version           int64                  `json:"version"`                     //
+	Version           uint64                 `json:"version"`                     //
 	BcsBytes          *string                `json:"bcsBytes,omitempty"`          // through moveObject
 	ModuleMap         map[string]string      `json:"moduleMap,omitempty"`         // through package
 	TypeOriginTable   []TypeOrigin           `json:"typeOriginTable,omitempty"`   // through package

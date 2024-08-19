@@ -79,3 +79,18 @@ func (w *ObjectOwnerWrapper) UnmarshalJSON(data []byte) error {
 
 	return errors.New("unknown ObjectOwner type")
 }
+
+func (w ObjectOwnerWrapper) MarshalJSON() ([]byte, error) {
+	switch o := w.ObjectOwner.(type) {
+	case ObjectOwner_AddressOwner:
+		return json.Marshal(ObjectOwner_AddressOwner{AddressOwner: o.AddressOwner})
+	case ObjectOwner_ObjectOwner:
+		return json.Marshal(ObjectOwner_ObjectOwner{ObjectOwner: o.ObjectOwner})
+	case ObjectOwner_Shared:
+		return json.Marshal(ObjectOwner_Shared{Shared: o.Shared})
+	case ObjectOwner_String:
+		return json.Marshal(string(o))
+	default:
+		return nil, errors.New("unknown ObjectOwner type")
+	}
+}

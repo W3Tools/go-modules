@@ -114,35 +114,15 @@ func (w SuiMoveNormalizedTypeWrapper) MarshalJSON() ([]byte, error) {
 	case SuiMoveNormalizedType_String:
 		return json.Marshal(string(t))
 	case SuiMoveNormalizedType_Struct:
-		return json.Marshal(struct {
-			Struct SuiMoveNormalizedTypeStruct `json:"Struct"`
-		}{
-			Struct: t.Struct,
-		})
+		return json.Marshal(SuiMoveNormalizedType_Struct{Struct: t.Struct})
 	case SuiMoveNormalizedType_Vector:
-		return json.Marshal(struct {
-			Vector SuiMoveNormalizedTypeWrapper `json:"Vector"`
-		}{
-			Vector: t.Vector,
-		})
+		return json.Marshal(SuiMoveNormalizedType_Vector{Vector: t.Vector})
 	case SuiMoveNormalizedType_TypeParameter:
-		return json.Marshal(struct {
-			TypeParameter uint64 `json:"TypeParameter"`
-		}{
-			TypeParameter: t.TypeParameter,
-		})
+		return json.Marshal(SuiMoveNormalizedType_TypeParameter{TypeParameter: t.TypeParameter})
 	case SuiMoveNormalizedType_Reference:
-		return json.Marshal(struct {
-			Reference SuiMoveNormalizedTypeWrapper `json:"Reference"`
-		}{
-			Reference: t.Reference,
-		})
+		return json.Marshal(SuiMoveNormalizedType_Reference{Reference: t.Reference})
 	case SuiMoveNormalizedType_MutableReference:
-		return json.Marshal(struct {
-			MutableReference SuiMoveNormalizedTypeWrapper `json:"MutableReference"`
-		}{
-			MutableReference: t.MutableReference,
-		})
+		return json.Marshal(SuiMoveNormalizedType_MutableReference{MutableReference: t.MutableReference})
 	default:
 		return nil, errors.New("unknown SuiMoveNormalizedType")
 	}
