@@ -477,7 +477,6 @@ func (ptb *ProgrammableTransactionBlock) prepare(options BuildOptions) error {
 		}
 
 		if ptb.gasConfig.Budget == 0 {
-			fmt.Printf("enter?\n")
 			_, blockData, err := ptb.build(buildOption{Overrides: buildOptionOverride{GasConfig: GasConfig{Budget: MAX_TX_GAS, Payment: []*sui_types.ObjectRef{}}}})
 			if err != nil {
 				return err
