@@ -30,6 +30,76 @@ func NewProgrammableTransactionBlock(client *client.SuiClient) *ProgrammableTran
 	}
 }
 
+func (ptb *ProgrammableTransactionBlock) NewMergeCoins(distination string, sources []string) (*sui_types.Argument, error) {
+	if len(sources) == 0 || distination == "" {
+		return nil, fmt.Errorf("missing distination coin or sources coins")
+	}
+
+	coinObjects, err := ptb.client.MultiGetObjects(
+		types.MultiGetObjectsParams{
+			IDs: append([]string{distination}, sources...),
+			Options: &types.SuiObjectDataOptions{
+				ShowContent: true,
+			},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(coinObjects) != len(sources)+1 {
+		return nil, fmt.Errorf("invalid coin list or coin duplicates")
+	}
+
+	var distinationArgument sui_types.Argument
+	var sourceArguments []sui_types.Argument
+	for _, object := range coinObjects {
+		objectId, err := sui_types.NewObjectIdFromHex(object.Data.ObjectId)
+		if err != nil {
+			return nil, err
+		}
+
+		version, err := strconv.ParseUint(object.Data.Version, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		digest, err := sui_types.NewDigest(object.Data.Digest)
+		if err != nil {
+			return nil, err
+		}
+
+		arg, err := ptb.builder.Obj(
+			sui_types.ObjectArg{
+				ImmOrOwnedObject: &sui_types.ObjectRef{
+					ObjectId: *objectId,
+					Version:  version,
+					Digest:   *digest,
+				},
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if utils.NormalizeSuiObjectId(object.Data.ObjectId) == utils.NormalizeSuiObjectId(distination) {
+			distinationArgument = arg
+		} else {
+			sourceArguments = append(sourceArguments, arg)
+		}
+	}
+
+	argument := ptb.builder.Command(
+		sui_types.Command{
+			MergeCoins: &struct {
+				Argument  sui_types.Argument
+				Arguments []sui_types.Argument
+			}{Argument: distinationArgument, Arguments: sourceArguments},
+		},
+	)
+	return &argument, nil
+}
+
 func (ptb *ProgrammableTransactionBlock) NewMoveCall(target string, args []interface{}, typeArgs []string) (*sui_types.Argument, error) {
 	arguments, err := ptb.ParseFunctionArguments(target, args)
 	if err != nil {
