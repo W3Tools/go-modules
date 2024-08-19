@@ -294,16 +294,16 @@ type SuiMoveStructTypeParameter struct {
 }
 
 type SuiMoveNormalizedField struct {
-	Name string      `json:"name"`
-	Type interface{} `json:"type"` // native type: SuiMoveNormalizedType
+	Name string                       `json:"name"`
+	Type SuiMoveNormalizedTypeWrapper `json:"type"`
 }
 
 type SuiMoveNormalizedFunction struct {
-	Visibility     SuiMoveVisibility   `json:"visibility"`
-	IsEntry        bool                `json:"isEntry"`
-	TypeParameters []SuiMoveAbilitySet `json:"typeParameters"`
-	Parameters     []interface{}       `json:"parameters"` // native type: []SuiMoveNormalizedType
-	Return         []interface{}       `json:"return"`     // native type: []SuiMoveNormalizedType
+	Visibility     SuiMoveVisibility               `json:"visibility"`
+	IsEntry        bool                            `json:"isEntry"`
+	TypeParameters []SuiMoveAbilitySet             `json:"typeParameters"`
+	Parameters     []*SuiMoveNormalizedTypeWrapper `json:"parameters"`
+	Return         []*SuiMoveNormalizedTypeWrapper `json:"return"`
 }
 
 type DryRunTransactionBlockResponse struct {
