@@ -40,8 +40,8 @@ type CoinSupply struct {
 }
 
 type SuiObjectResponse struct {
-	Data  *SuiObjectData       `json:"data,omitempty"`
-	Error *ObjectResponseError `json:"error,omitempty"`
+	Data  *SuiObjectData           `json:"data,omitempty"`
+	Error *ObjectResponseErrorCode `json:"error,omitempty"`
 }
 
 type PaginatedObjectsResponse struct {
@@ -321,14 +321,6 @@ type DevInspectResults struct {
 	Results []SuiExecutionResult `json:"results,omitempty"`
 }
 
-type ObjectResponseError struct {
-	NotExists            ObjectResponseErrorCode `json:"notExists"`
-	DynamicFieldNotFound ObjectResponseErrorCode `json:"dynamicFieldNotFound"`
-	Deleted              ObjectResponseErrorCode `json:"deleted"`
-	Unknown              ObjectResponseErrorCode `json:"unknown"`
-	DisplayError         ObjectResponseErrorCode `json:"displayError"`
-}
-
 type ObjectResponseErrorCode struct {
 	Code           string `jons:"code"`
 	ObjectId       string `json:"object_id,omitempty"`
@@ -353,8 +345,8 @@ type SuiObjectData struct {
 
 // DisplayFieldsResponse
 type DisplayFieldsResponse struct {
-	Data  *map[string]string   `json:"data,omitempty"`
-	Error *ObjectResponseError `json:"error,omitempty"`
+	Data  *map[string]string       `json:"data,omitempty"`
+	Error *ObjectResponseErrorCode `json:"error,omitempty"`
 }
 
 type SuiParsedData struct {

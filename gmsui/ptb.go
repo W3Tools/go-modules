@@ -16,10 +16,45 @@ import (
 	"github.com/fardream/go-bcs/bcs"
 )
 
+// Constants
+const (
+	MAX_PURE_ARGUMENT_SIZE = 16 * 1024
+	MAX_TX_GAS             = 50_000_000_000
+	MAX_GAS_OBJECTS        = 256
+	MAX_TX_SIZE_BYTES      = 128 * 1024
+	GAS_SAFE_OVERHEAD      = 1000
+)
+
+// Transaction Building Parameters Interface Type
+type BuildOptions struct {
+	OnlyTransactionKind bool `json:"onlyTransactionKind"`
+}
+
+type buildOption struct {
+	Overrides           buildOptionOverride `json:"Overrides"`
+	OnlyTransactionKind bool                `json:"onlyTransactionKind"`
+}
+
+type buildOptionOverride struct {
+	Sender    string    `json:"sender"`
+	GasConfig GasConfig `json:"gasConfig"`
+	// Expiration any       `json:"expiration"`
+}
+
+type GasConfig struct {
+	Budget  uint64                 `json:"budget"`
+	Price   uint64                 `json:"price"`
+	Payment []*sui_types.ObjectRef `json:"payment"`
+	Owner   string                 `json:"owner"`
+}
+
 type ProgrammableTransactionBlock struct {
 	client  *client.SuiClient
 	builder *sui_types.ProgrammableTransactionBuilder
 	ctx     context.Context
+
+	sender    string
+	gasConfig GasConfig
 }
 
 func NewProgrammableTransactionBlock(client *client.SuiClient) *ProgrammableTransactionBlock {
@@ -30,6 +65,47 @@ func NewProgrammableTransactionBlock(client *client.SuiClient) *ProgrammableTran
 	}
 }
 
+// The Programmable Transaction Block Parameters Settings
+func (ptb *ProgrammableTransactionBlock) SetSender(sender string) {
+	ptb.sender = sender
+}
+
+func (ptb *ProgrammableTransactionBlock) SetSenderIfNotSet(sender string) {
+	if ptb.sender == "" {
+		ptb.sender = sender
+	}
+}
+
+func (ptb *ProgrammableTransactionBlock) SetGasPrice(price uint64) {
+	ptb.gasConfig.Price = price
+}
+
+func (ptb *ProgrammableTransactionBlock) SetGasBudget(budget uint64) {
+	ptb.gasConfig.Budget = budget
+}
+
+func (ptb *ProgrammableTransactionBlock) SetGasOwner(owner string) {
+	ptb.gasConfig.Owner = owner
+}
+
+func (ptb *ProgrammableTransactionBlock) SetGasPayment(payments []*sui_types.ObjectRef) {
+	ptb.gasConfig.Payment = payments
+}
+
+// The Programmable Transaction Block Parameter Retrieval
+func (ptb *ProgrammableTransactionBlock) Builder() *sui_types.ProgrammableTransactionBuilder {
+	return ptb.builder
+}
+
+func (ptb *ProgrammableTransactionBlock) Client() *client.SuiClient {
+	return ptb.client
+}
+
+func (ptb *ProgrammableTransactionBlock) Context() context.Context {
+	return ptb.ctx
+}
+
+// Transaction Option
 func (ptb *ProgrammableTransactionBlock) NewMergeCoins(distination string, sources []string) (*sui_types.Argument, error) {
 	if len(sources) == 0 || distination == "" {
 		return nil, fmt.Errorf("missing distination coin or sources coins")
@@ -54,6 +130,10 @@ func (ptb *ProgrammableTransactionBlock) NewMergeCoins(distination string, sourc
 	var distinationArgument sui_types.Argument
 	var sourceArguments []sui_types.Argument
 	for _, object := range coinObjects {
+		if object.Error != nil {
+			return nil, fmt.Errorf("invalid coin object %s, cause: %v", object.Error.ObjectId, object.Error.Code)
+		}
+
 		objectId, err := sui_types.NewObjectIdFromHex(object.Data.ObjectId)
 		if err != nil {
 			return nil, err
@@ -310,102 +390,224 @@ func ParseFunctionTypeArguments(typeArgs []string) (typeArguments []move_types.T
 	return
 }
 
-func (ptb *ProgrammableTransactionBlock) Finish(sender string, gasObject *string, gasBudget uint64, gasPrice *uint64) (*sui_types.TransactionData, []byte, error) {
-	hexSender, err := sui_types.NewAddressFromHex(sender)
-	if err != nil {
+func (ptb *ProgrammableTransactionBlock) Build(options BuildOptions) (*sui_types.TransactionData, []byte, error) {
+	if err := ptb.prepare(options); err != nil {
 		return nil, nil, err
 	}
 
-	gasPayment := []*sui_types.ObjectRef{}
-	if gasObject == nil {
-		coins, err := ptb.client.GetCoins(types.GetCoinsParams{
-			Owner:    sender,
-			CoinType: gm.NewStringPtr(SuiGasCoinType),
-		})
-		if err != nil {
-			return nil, nil, err
+	return ptb.build(buildOption{})
+}
+
+// Internal Functions
+func (ptb *ProgrammableTransactionBlock) build(options buildOption) (*sui_types.TransactionData, []byte, error) {
+	programmableTransaction := ptb.builder.Finish()
+	if options.OnlyTransactionKind {
+		kind := sui_types.TransactionKind{
+			ProgrammableTransaction: &programmableTransaction,
 		}
 
-		for _, coin := range coins.Data {
-			digest, err := sui_types.NewDigest(coin.Digest)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			uint64Version, err := strconv.ParseUint(coin.Version, 10, 64)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			objectId, err := sui_types.NewObjectIdFromHex(coin.CoinObjectId)
-			if err != nil {
-				return nil, nil, err
-			}
-			reference := sui_types.ObjectRef{
-				Digest:   *digest,
-				Version:  uint64Version,
-				ObjectId: *objectId,
-			}
-			gasPayment = append(gasPayment, &reference)
-		}
-	} else {
-		gasObjectId, _, err := GetObjectAndUnmarshal[any](ptb.client, *gasObject)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		digest, err := sui_types.NewDigest(gasObjectId.Data.Digest)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		uint64Version, err := strconv.ParseUint(gasObjectId.Data.Version, 10, 64)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		objectId, err := sui_types.NewObjectIdFromHex(gasObjectId.Data.ObjectId)
-		if err != nil {
-			return nil, nil, err
-		}
-		gasReference := sui_types.ObjectRef{
-			Digest:   *digest,
-			Version:  uint64Version,
-			ObjectId: *objectId,
-		}
-		gasPayment = append(gasPayment, &gasReference)
+		bs, err := bcs.Marshal(kind)
+		return nil, bs, err
 	}
 
-	var referenceGasPrice uint64
-	if gasPrice == nil {
-		refGasPrice, err := ptb.client.GetReferenceGasPrice()
-		if err != nil {
-			return nil, nil, err
-		}
-		referenceGasPrice = refGasPrice.Uint64() + 1
-	} else {
-		referenceGasPrice = *gasPrice
+	sender := ptb.sender
+	if options.Overrides.Sender != "" {
+		sender = options.Overrides.Sender
 	}
 
+	gasBudget := ptb.gasConfig.Budget
+	if options.Overrides.GasConfig.Budget != 0 {
+		gasBudget = options.Overrides.GasConfig.Budget
+	}
+
+	gasPayment := ptb.gasConfig.Payment
+	if options.Overrides.GasConfig.Payment != nil {
+		gasPayment = options.Overrides.GasConfig.Payment
+	}
+
+	gasPrice := ptb.gasConfig.Price
+	if options.Overrides.GasConfig.Price != 0 {
+		gasPrice = options.Overrides.GasConfig.Price
+	}
+
+	if sender == "" {
+		return nil, nil, fmt.Errorf("missing transaction sender")
+	}
+
+	if gasBudget == 0 {
+		return nil, nil, fmt.Errorf("missing gas budget")
+	}
+
+	if gasPayment == nil {
+		return nil, nil, fmt.Errorf("missing gas payment")
+	}
+
+	if gasPrice == 0 {
+		return nil, nil, fmt.Errorf("missing gas price")
+	}
+
+	s, err := sui_types.NewAddressFromHex(sender)
+	if err != nil {
+		return nil, nil, err
+	}
 	tx := sui_types.NewProgrammable(
-		*hexSender,
+		*s,
 		gasPayment,
-		ptb.builder.Finish(),
+		programmableTransaction,
 		gasBudget,
-		referenceGasPrice,
+		gasPrice,
 	)
 	bs, err := bcs.Marshal(tx)
 	return &tx, bs, err
 }
 
-func (ptb *ProgrammableTransactionBlock) Builder() *sui_types.ProgrammableTransactionBuilder {
-	return ptb.builder
+// prepare transaction and transaction config
+func (ptb *ProgrammableTransactionBlock) prepare(options BuildOptions) error {
+	if !options.OnlyTransactionKind && ptb.sender == "" {
+		return fmt.Errorf("missing transaction sender")
+	}
+
+	if err := ptb.prepareGasPrice(options); err != nil {
+		return err
+	}
+
+	if !options.OnlyTransactionKind {
+		if err := ptb.prepareGasPayment(options); err != nil {
+			return err
+		}
+
+		if ptb.gasConfig.Budget == 0 {
+			fmt.Printf("enter?\n")
+			_, blockData, err := ptb.build(buildOption{Overrides: buildOptionOverride{GasConfig: GasConfig{Budget: MAX_TX_GAS, Payment: []*sui_types.ObjectRef{}}}})
+			if err != nil {
+				return err
+			}
+			dryRunResult, err := ptb.client.DryRunTransactionBlock(types.DryRunTransactionBlockParams{
+				TransactionBlock: blockData,
+			})
+			if err != nil {
+				return err
+			}
+
+			if dryRunResult.Effects.Status.Status != "success" {
+				return fmt.Errorf("dry run failed, could not automatically determine a budget: %v", dryRunResult.Effects.Status.Error)
+			}
+
+			computationCost, err := strconv.ParseUint(dryRunResult.Effects.GasUsed.ComputationCost, 10, 64)
+			if err != nil {
+				return nil
+			}
+
+			storageCost, err := strconv.ParseUint(dryRunResult.Effects.GasUsed.StorageCost, 10, 64)
+			if err != nil {
+				return nil
+			}
+
+			storageRebate, err := strconv.ParseUint(dryRunResult.Effects.GasUsed.StorageRebate, 10, 64)
+			if err != nil {
+				return nil
+			}
+
+			_price := ptb.gasConfig.Price
+			if _price == 0 {
+				_price = 1
+			}
+			safeOverhead := GAS_SAFE_OVERHEAD * _price
+			baseComputationCostWithOverhead := computationCost + safeOverhead
+			gasBudget := baseComputationCostWithOverhead + storageCost - storageRebate
+
+			if gasBudget < baseComputationCostWithOverhead {
+				gasBudget = baseComputationCostWithOverhead
+			}
+			ptb.SetGasBudget(gasBudget)
+		}
+	}
+
+	return nil
 }
 
-func (ptb *ProgrammableTransactionBlock) Client() *client.SuiClient {
-	return ptb.client
+func (ptb *ProgrammableTransactionBlock) prepareGasPrice(options BuildOptions) error {
+	if options.OnlyTransactionKind || ptb.gasConfig.Price != 0 {
+		return nil
+	}
+
+	referenceGasPrice, err := ptb.client.GetReferenceGasPrice()
+	if err != nil {
+		return err
+	}
+
+	ptb.SetGasPrice(referenceGasPrice.Uint64() + 1)
+	return nil
 }
 
-func (ptb *ProgrammableTransactionBlock) Context() context.Context {
-	return ptb.ctx
+func (ptb *ProgrammableTransactionBlock) prepareGasPayment(options BuildOptions) error {
+	if len(ptb.gasConfig.Payment) > MAX_GAS_OBJECTS {
+		return fmt.Errorf("payment objects exceed maximum amount: %v", MAX_GAS_OBJECTS)
+	}
+
+	if options.OnlyTransactionKind || len(ptb.gasConfig.Payment) > 0 {
+		return nil
+	}
+
+	gasOwner := ptb.sender
+	if ptb.gasConfig.Owner != "" {
+		gasOwner = ptb.gasConfig.Owner
+	}
+
+	coins, err := ptb.client.GetCoins(
+		types.GetCoinsParams{
+			Owner:    gasOwner,
+			CoinType: &SuiGasCoinType,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	var paymentCoins []*sui_types.ObjectRef
+	for _, coin := range coins.Data {
+		if findObjectFromBuilderArgs(ptb.builder.Inputs, coin.CoinObjectId) {
+			continue
+		}
+
+		if len(paymentCoins) > MAX_GAS_OBJECTS {
+			continue
+		}
+
+		digest, err := sui_types.NewDigest(coin.Digest)
+		if err != nil {
+			return err
+		}
+
+		uint64Version, err := strconv.ParseUint(coin.Version, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		objectId, err := sui_types.NewObjectIdFromHex(coin.CoinObjectId)
+		if err != nil {
+			return err
+		}
+
+		paymentCoins = append(paymentCoins, &sui_types.ObjectRef{ObjectId: *objectId, Version: uint64Version, Digest: *digest})
+	}
+
+	if len(paymentCoins) == 0 {
+		return fmt.Errorf("no valid gas coins found for the transaction")
+	}
+
+	ptb.SetGasPayment(paymentCoins)
+	return nil
+}
+
+func findObjectFromBuilderArgs(args map[string]sui_types.CallArg, objectId string) bool {
+	for _, arg := range args {
+		if arg.Object != nil && arg.Object.ImmOrOwnedObject != nil {
+			if utils.NormalizeSuiObjectId(objectId) == utils.NormalizeSuiObjectId(arg.Object.ImmOrOwnedObject.ObjectId.String()) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
