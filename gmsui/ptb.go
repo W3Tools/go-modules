@@ -156,7 +156,7 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 				mutable = true
 			}
 
-			objectInfo := gm.FilterOne(*inputObjects, func(v types.SuiObjectResponse) bool {
+			objectInfo := gm.FilterOne(inputObjects, func(v *types.SuiObjectResponse) bool {
 				return v.Data.ObjectId == utils.NormalizeSuiObjectId(inputArgument.(string))
 			})
 

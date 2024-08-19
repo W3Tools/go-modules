@@ -47,7 +47,7 @@ func GetObjectAndUnmarshal[T any](client *client.SuiClient, id string) (raw *typ
 	}
 }
 
-func GetObjectsAndUnmarshal[T any](client *client.SuiClient, ids []string) (raw *[]types.SuiObjectResponse, values []*T, err error) {
+func GetObjectsAndUnmarshal[T any](client *client.SuiClient, ids []string) (raw []*types.SuiObjectResponse, values []*T, err error) {
 	raw, err = client.MultiGetObjects(types.MultiGetObjectsParams{
 		IDs: ids,
 		Options: &types.SuiObjectDataOptions{
@@ -61,7 +61,7 @@ func GetObjectsAndUnmarshal[T any](client *client.SuiClient, ids []string) (raw 
 		},
 	})
 
-	for _, data := range *raw {
+	for _, data := range raw {
 		switch data.Data.Content.DataType {
 		case types.Package:
 			return nil, nil, fmt.Errorf("unimplemented %s, %s expected an object id, not package id", types.Package, data.Data.ObjectId)

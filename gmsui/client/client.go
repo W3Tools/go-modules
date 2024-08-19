@@ -128,7 +128,7 @@ func (client *SuiClient) GetBalance(input types.GetBalanceParams) (response *typ
 }
 
 // Get the total coin balance for all coin types, owned by the address owner.
-func (client *SuiClient) GetAllBalances(input types.GetAllBalancesParams) (response *[]types.Balance, err error) {
+func (client *SuiClient) GetAllBalances(input types.GetAllBalancesParams) (response []*types.Balance, err error) {
 	if input.Owner == "" || !utils.IsValidSuiAddress(utils.NormalizeSuiAddress(input.Owner)) {
 		return nil, fmt.Errorf("invalid sui address")
 	}
@@ -188,7 +188,7 @@ func (client *SuiClient) GetObject(input types.GetObjectParams) (response *types
 }
 
 // Batch get details about a list of objects. If any of the object ids are duplicates the call will fail
-func (client *SuiClient) MultiGetObjects(input types.MultiGetObjectsParams) (response *[]types.SuiObjectResponse, err error) {
+func (client *SuiClient) MultiGetObjects(input types.MultiGetObjectsParams) (response []*types.SuiObjectResponse, err error) {
 	_, err = gm.Map(input.IDs, func(v string) (any, error) {
 		if v == "" || !utils.IsValidSuiObjectId(utils.NormalizeSuiObjectId(v)) {
 			return nil, fmt.Errorf("invalid sui object id %s", v)
@@ -287,7 +287,7 @@ func (client *SuiClient) GetTransactionBlock(input types.GetTransactionBlockPara
 	)
 }
 
-func (client *SuiClient) MultiGetTransactionBlocks(input types.MultiGetTransactionBlocksParams) (response *[]types.SuiTransactionBlockResponse, err error) {
+func (client *SuiClient) MultiGetTransactionBlocks(input types.MultiGetTransactionBlocksParams) (response []*types.SuiTransactionBlockResponse, err error) {
 	_, err = gm.Map(input.Digests, func(v string) (any, error) {
 		if v == "" || !utils.IsValidTransactionDigest(v) {
 			return nil, fmt.Errorf("invalid transaction digest %s", v)
@@ -489,7 +489,7 @@ func (client *SuiClient) GetChainIdentifier() (response string, err error) {
 }
 
 // Return the delegated stakes for an address
-func (client *SuiClient) GetStakes(input types.GetStakesParams) (response *[]types.DelegatedStake, err error) {
+func (client *SuiClient) GetStakes(input types.GetStakesParams) (response []*types.DelegatedStake, err error) {
 	if input.Owner == "" || !utils.IsValidSuiObjectId(utils.NormalizeSuiObjectId(input.Owner)) {
 		return nil, fmt.Errorf("invalid sui address")
 	}
@@ -504,7 +504,7 @@ func (client *SuiClient) GetStakes(input types.GetStakesParams) (response *[]typ
 }
 
 // Return the delegated stakes queried by id.
-func (client *SuiClient) GetStakesByIds(input types.GetStakesByIdsParams) (response *[]types.DelegatedStake, err error) {
+func (client *SuiClient) GetStakesByIds(input types.GetStakesByIdsParams) (response []*types.DelegatedStake, err error) {
 	_, err = gm.Map(input.StakedSuiIds, func(v string) (any, error) {
 		if v == "" || !utils.IsValidSuiObjectId(utils.NormalizeSuiObjectId(v)) {
 			return nil, fmt.Errorf("invalid sui object id %s", v)
