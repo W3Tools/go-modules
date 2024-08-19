@@ -195,3 +195,7 @@ func NewStringPtr(v string) *string {
 func NewNumberPtr[T number](v T) *T {
 	return &v
 }
+
+func NewBoolPtr(v bool) *bool {
+	return &v
+}
