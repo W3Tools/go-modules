@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/btcsuite/btcd/btcutil/base58"
 )
 
 const (
@@ -12,8 +14,9 @@ const (
 )
 
 // Returns whether the tx digest is valid based on the serialization format
-func IsValidTransactionDigest(v string) bool {
-	return false
+func IsValidTransactionDigest(value string) bool {
+	buffer := base58.Decode(value)
+	return len(buffer) == TxDigestLength
 }
 
 func IsValidSuiAddress(v string) bool {
