@@ -62,17 +62,17 @@ type DynamicFieldPage struct {
 }
 
 type SuiTransactionBlockResponse struct {
-	Digest                  string               `json:"digest"`
-	Transaction             *SuiTransactionBlock `json:"transaction,omitempty"`
-	RawTransaction          string               `json:"rawTransaction,omitempty"`
-	Effects                 *TransactionEffects  `json:"effects,omitempty"`
-	Events                  *[]SuiEvent          `json:"events,omitempty"`
-	ObjectChanges           *[]SuiObjectChange   `json:"objectChanges,omitempty"`
-	BalanceChanges          *[]BalanceChange     `json:"balanceChanges,omitempty"`
-	TimestampMs             *string              `json:"timestampMs,omitempty"`
-	Checkpoint              *string              `json:"checkpoint,omitempty"`
-	ConfirmedLocalExecution *bool                `json:"confirmedLocalExecution,omitempty"`
-	Errors                  []string             `json:"errors,omitempty"`
+	Digest                  string                    `json:"digest"`
+	Transaction             *SuiTransactionBlock      `json:"transaction,omitempty"`
+	RawTransaction          string                    `json:"rawTransaction,omitempty"`
+	Effects                 *TransactionEffects       `json:"effects,omitempty"`
+	Events                  *[]SuiEvent               `json:"events,omitempty"`
+	ObjectChanges           []*SuiObjectChangeWrapper `json:"objectChanges,omitempty"`
+	BalanceChanges          *[]BalanceChange          `json:"balanceChanges,omitempty"`
+	TimestampMs             *string                   `json:"timestampMs,omitempty"`
+	Checkpoint              *string                   `json:"checkpoint,omitempty"`
+	ConfirmedLocalExecution *bool                     `json:"confirmedLocalExecution,omitempty"`
+	Errors                  []string                  `json:"errors,omitempty"`
 }
 
 type PaginatedTransactionResponse struct {
@@ -307,11 +307,11 @@ type SuiMoveNormalizedFunction struct {
 }
 
 type DryRunTransactionBlockResponse struct {
-	Effects        TransactionEffects   `json:"effects"`
-	Events         []SuiEvent           `json:"events"`
-	ObjectChanges  []SuiObjectChange    `json:"objectChanges"`
-	BalanceChanges []BalanceChange      `json:"balanceChanges"`
-	Input          TransactionBlockData `json:"input"`
+	Effects        TransactionEffects       `json:"effects"`
+	Events         []SuiEvent               `json:"events"`
+	ObjectChanges  []SuiObjectChangeWrapper `json:"objectChanges"`
+	BalanceChanges []BalanceChange          `json:"balanceChanges"`
+	Input          TransactionBlockData     `json:"input"`
 }
 
 type DevInspectResults struct {
@@ -483,20 +483,6 @@ type SuiEvent struct {
 type EventId struct {
 	TxDigest string `json:"txDigest"`
 	EventSeq string `json:"eventSeq"`
-}
-
-type SuiObjectChange struct {
-	Type            string              `json:"type"`                      //
-	Sender          *string             `json:"sender,omitempty"`          // through transferred/mutated/deleted/wrapped/created
-	Recipient       *ObjectOwnerWrapper `json:"recipient,omitempty"`       // through transferred
-	Owner           *ObjectOwnerWrapper `json:"owner,omitempty"`           // through mutated/created
-	ObjectType      *string             `json:"objectType,omitempty"`      // through transferred/mutated/deleted/wrapped/created
-	ObjectId        *string             `json:"objectId,omitempty"`        // through transferred/mutated/deleted/wrapped/created
-	Version         string              `json:"version"`                   //
-	PreviousVersion *string             `json:"previousVersion,omitempty"` // through mutated/
-	Digest          *string             `json:"digest,omitempty"`          // through published/transferred/mutated/created
-	Modules         *[]string           `json:"modules,omitempty"`         // through published/
-	PackageId       *string             `json:"packageId,omitempty"`       // through published/
 }
 
 type BalanceChange struct {
