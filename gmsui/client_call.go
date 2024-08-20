@@ -27,11 +27,11 @@ func GetObjectAndUnmarshal[T any](client *client.SuiClient, id string) (raw *typ
 		return nil, nil, err
 	}
 
-	switch raw.Data.Content.DataType {
-	case types.Package:
-		return nil, nil, fmt.Errorf("unimplemented %s, expected an object id, not package id", types.Package)
-	case types.MoveObject:
-		jsb, err := json.Marshal(raw.Data.Content.Fields)
+	switch t := raw.Data.Content.SuiParsedData.(type) {
+	case types.SuiParsedPackageData:
+		return nil, nil, fmt.Errorf("unimplemented %s, expected an object id, not package id", t.DataType)
+	case types.SuiParsedMoveObjectData:
+		jsb, err := t.Fields.MarshalJSON()
 		if err != nil {
 			return nil, nil, err
 		}
@@ -43,7 +43,7 @@ func GetObjectAndUnmarshal[T any](client *client.SuiClient, id string) (raw *typ
 		}
 		return raw, value, err
 	default:
-		return nil, nil, fmt.Errorf("unknown data type %s, expected an object id", raw.Data.Content.DataType)
+		return nil, nil, fmt.Errorf("unknown data type, expected an object id, value: %v", t)
 	}
 }
 
@@ -62,11 +62,11 @@ func GetObjectsAndUnmarshal[T any](client *client.SuiClient, ids []string) (raw 
 	})
 
 	for _, data := range raw {
-		switch data.Data.Content.DataType {
-		case types.Package:
-			return nil, nil, fmt.Errorf("unimplemented %s, %s expected an object id, not package id", types.Package, data.Data.ObjectId)
-		case types.MoveObject:
-			jsb, err := json.Marshal(data.Data.Content.Fields)
+		switch t := data.Data.Content.SuiParsedData.(type) {
+		case types.SuiParsedPackageData:
+			return nil, nil, fmt.Errorf("unimplemented %s, %s expected an object id, not package id", t.DataType, data.Data.ObjectId)
+		case types.SuiParsedMoveObjectData:
+			jsb, err := t.Fields.MarshalJSON()
 			if err != nil {
 				return nil, nil, err
 			}
@@ -78,7 +78,7 @@ func GetObjectsAndUnmarshal[T any](client *client.SuiClient, ids []string) (raw 
 			}
 			values = append(values, value)
 		default:
-			return nil, nil, fmt.Errorf("unknown data type %s, %s expected an object id", data.Data.Content.DataType, data.Data.ObjectId)
+			return nil, nil, fmt.Errorf("unknown data type, %s expected an object id, value: %v", data.Data.ObjectId, t)
 		}
 	}
 	return
@@ -93,7 +93,7 @@ func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *client.SuiCl
 		return nil, nil, err
 	}
 
-	jsb, err := json.Marshal(raw.Data.Content.Fields)
+	jsb, err := raw.Data.Content.MarshalJSON()
 	if err != nil {
 		return nil, nil, err
 	}
