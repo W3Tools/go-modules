@@ -550,8 +550,7 @@ func (client *SuiClient) ResolveNameServiceAddress(input types.ResolveNameServic
 }
 
 // Get Move function argument types like read, write and full access
-// The native response type is []types.SuiMoveFunctionArgType, It contains two different types: string and types.SuiMoveFunctionArgType_Object
-func (client *SuiClient) GetMoveFunctionArgTypes(input types.GetMoveFunctionArgTypesParams) (response []interface{}, err error) {
+func (client *SuiClient) GetMoveFunctionArgTypes(input types.GetMoveFunctionArgTypesParams) (response []types.SuiMoveFunctionArgTypeWrapper, err error) {
 	return response, client.request(
 		SuiTransportRequestOptions{
 			Method: "sui_getMoveFunctionArgTypes",
