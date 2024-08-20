@@ -391,37 +391,10 @@ type SuiTransactionBlock struct {
 }
 
 type TransactionBlockData struct {
-	MessageVersion string                  `json:"messageVersion"`
-	Transaction    SuiTransactionBlockKind `json:"transaction"`
-	Sender         string                  `json:"sender"`
-	GasData        SuiGasData              `json:"gasData"`
-}
-
-type SuiTransactionBlockKind struct {
-	Kind                  string             `json:"kind"`                               // through ChangeEpoch/Genesis/ConsensusCommitPrologue/ProgrammableTransaction/AuthenticatorStateUpdate/EndOfEpochTransaction
-	ComputationCharge     *string            `json:"computation_charge,omitempty"`       // through ChangeEpoch
-	Epoch                 *string            `json:"epoch,omitempty"`                    // through ChangeEpoch/ConsensusCommitPrologue/AuthenticatorStateUpdate
-	EpochStartTimestampMs *string            `json:"epoch_start_timestamp_ms,omitempty"` // through ChangeEpoch
-	StorageCharge         *string            `json:"storage_charge,omitempty"`           // through ChangeEpoch
-	StorageRebate         *string            `json:"storage_rebate,omitempty"`           // through ChangeEpoch
-	Objects               *[]string          `json:"objects,omitempty"`                  // through Genesis
-	CommitTimestampMs     *string            `json:"commit_timestamp_ms,omitempty"`      // through ConsensusCommitPrologue
-	Round                 *string            `json:"round,omitempty"`                    // through ConsensusCommitPrologue/AuthenticatorStateUpdate
-	Inputs                *[]SuiCallArg      `json:"inputs,omitempty"`                   // through ProgrammableTransaction
-	Transactions          *[]json.RawMessage `json:"transactions,omitempty"`             // through ProgrammableTransaction
-	NewActiveJwks         *[]SuiActiveJwk    `json:"new_active_jwks,omitempty"`          // through AuthenticatorStateUpdate
-}
-
-type SuiCallArg struct {
-	Type                 string       `json:"type"`                           // through immOrOwnedObject/sharedObject/receiving/pure
-	ObjectType           *string      `json:"objectType,omitempty"`           // through immOrOwnedObject/sharedObject/receiving
-	ObjectId             *string      `json:"objectId,omitempty"`             // through immOrOwnedObject/sharedObject/receiving
-	InitialSharedVersion *string      `json:"initialSharedVersion,omitempty"` // through sharedObject
-	Version              *string      `json:"version,omitempty"`              // through immOrOwnedObject/receiving
-	Mutable              *bool        `json:"mutable,omitempty"`              // through sharedObject
-	Digest               *string      `json:"digest,omitempty"`               // through immOrOwnedObject/receiving
-	ValueType            *string      `json:"valueType,omitempty"`            // through pure
-	Value                *interface{} `json:"value,omitempty"`                // through pure
+	MessageVersion string                         `json:"messageVersion"`
+	Transaction    SuiTransactionBlockKindWrapper `json:"transaction"`
+	Sender         string                         `json:"sender"`
+	GasData        SuiGasData                     `json:"gasData"`
 }
 
 type SuiActiveJwk struct {

@@ -297,7 +297,7 @@ type TransactionFilter struct {
 	FromAndToAddress  *TransactionFilter_FromAndToAddress `json:"FromAndToAddress,omitempty"`
 	FromOrToAddress   *TransactionFilter_FromOrToAddress  `json:"FromOrToAddress,omitempty"`
 	TransactionKind   *string                             `json:"TransactionKind,omitempty"`
-	TransactionKindIn *[]string                           `json:"TransactionKindIn,omitempty"`
+	TransactionKindIn []*string                           `json:"TransactionKindIn,omitempty"`
 }
 
 type TransactionFilter_MoveFunction struct {
