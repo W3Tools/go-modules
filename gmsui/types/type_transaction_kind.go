@@ -59,8 +59,8 @@ type SuiTransactionBlockKindAuthenticatorStateUpdate struct {
 }
 
 type SuiTransactionBlockKindEndOfEpochTransaction struct {
-	Kind         string                         `json:"kind"`
-	Transactions []SuiEndOfEpochTransactionKind `json:"Transactions"`
+	Kind         string                                `json:"kind"`
+	Transactions []SuiEndOfEpochTransactionKindWrapper `json:"Transactions"`
 }
 
 func (SuiTransactionBlockKindChangeEpoch) isSuiTransactionBlockKind()               {}
@@ -334,20 +334,65 @@ type SuiEndOfEpochTransactionKind interface {
 	isSuiEndOfEpochTransactionKind()
 }
 type SuiEndOfEpochTransactionKindAuthenticatorStateCreate string
-type SuiEndOfEpochTransactionKindChangeEpoch struct{}
-type SuiEndOfEpochTransactionKindAuthenticatorStateExpire struct{}
+
+type SuiEndOfEpochTransactionKindChangeEpoch struct {
+	ChangeEpoch SuiChangeEpoch `json:"ChangeEpoch"`
+}
+
+type SuiEndOfEpochTransactionKindAuthenticatorStateExpire struct {
+	AuthenticatorStateExpire SuiAuthenticatorStateExpire `json:"AuthenticatorStateExpire"`
+}
 
 func (SuiEndOfEpochTransactionKindAuthenticatorStateCreate) isSuiEndOfEpochTransactionKind() {}
 func (SuiEndOfEpochTransactionKindChangeEpoch) isSuiEndOfEpochTransactionKind()              {}
 func (SuiEndOfEpochTransactionKindAuthenticatorStateExpire) isSuiEndOfEpochTransactionKind() {}
 
-// -----------MoveCallSuiTransaction-----------
-type MoveCallSuiTransaction struct {
-	Package       string               `json:"package"`
-	Module        string               `json:"module"`
-	Function      string               `json:"function"`
-	TypeArguments []*string            `json:"type_arguments,omitempty"`
-	Arguments     []SuiArgumentWrapper `json:"arguments"`
+type SuiEndOfEpochTransactionKindWrapper struct {
+	SuiEndOfEpochTransactionKind
+}
+
+func (w *SuiEndOfEpochTransactionKindWrapper) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		w.SuiEndOfEpochTransactionKind = SuiEndOfEpochTransactionKindAuthenticatorStateCreate(s)
+		return nil
+	}
+
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+
+	switch {
+	case obj["ChangeEpoch"] != nil:
+		var k SuiEndOfEpochTransactionKindChangeEpoch
+		if err := json.Unmarshal(data, &k); err != nil {
+			return err
+		}
+		w.SuiEndOfEpochTransactionKind = k
+	case obj["AuthenticatorStateExpire"] != nil:
+		var k SuiEndOfEpochTransactionKindAuthenticatorStateExpire
+		if err := json.Unmarshal(data, &k); err != nil {
+			return err
+		}
+		w.SuiEndOfEpochTransactionKind = k
+	default:
+		return errors.New("unknown SuiEndOfEpochTransactionKind type")
+	}
+	return nil
+}
+
+func (w *SuiEndOfEpochTransactionKindWrapper) MarshalJSON() ([]byte, error) {
+	switch t := w.SuiEndOfEpochTransactionKind.(type) {
+	case SuiEndOfEpochTransactionKindAuthenticatorStateCreate:
+		return json.Marshal(string(t))
+	case SuiEndOfEpochTransactionKindChangeEpoch:
+		return json.Marshal(SuiEndOfEpochTransactionKindChangeEpoch{ChangeEpoch: t.ChangeEpoch})
+	case SuiEndOfEpochTransactionKindAuthenticatorStateExpire:
+		return json.Marshal(SuiEndOfEpochTransactionKindAuthenticatorStateExpire{AuthenticatorStateExpire: t.AuthenticatorStateExpire})
+	default:
+		return nil, errors.New("unknown SuiEndOfEpochTransactionKind type")
+	}
 }
 
 // -----------SuiArgument-----------
