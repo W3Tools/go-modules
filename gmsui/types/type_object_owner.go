@@ -25,12 +25,12 @@ type ObjectOwner_SharedData struct {
 	InitialSharedVersion uint64 `json:"initial_shared_version"`
 }
 
-type ObjectOwner_String string
+type ObjectOwner_Immutable string
 
 func (ObjectOwner_AddressOwner) isObjectOwner() {}
 func (ObjectOwner_ObjectOwner) isObjectOwner()  {}
 func (ObjectOwner_Shared) isObjectOwner()       {}
-func (ObjectOwner_String) isObjectOwner()       {}
+func (ObjectOwner_Immutable) isObjectOwner()    {}
 
 type ObjectOwnerWrapper struct {
 	ObjectOwner
@@ -40,7 +40,7 @@ type ObjectOwnerWrapper struct {
 func (w *ObjectOwnerWrapper) UnmarshalJSON(data []byte) error {
 	var s string
 	if err := json.Unmarshal(data, &s); err == nil {
-		w.ObjectOwner = ObjectOwner_String(s)
+		w.ObjectOwner = ObjectOwner_Immutable(s)
 		return nil
 	}
 
@@ -88,7 +88,7 @@ func (w ObjectOwnerWrapper) MarshalJSON() ([]byte, error) {
 		return json.Marshal(ObjectOwner_ObjectOwner{ObjectOwner: o.ObjectOwner})
 	case ObjectOwner_Shared:
 		return json.Marshal(ObjectOwner_Shared{Shared: o.Shared})
-	case ObjectOwner_String:
+	case ObjectOwner_Immutable:
 		return json.Marshal(string(o))
 	default:
 		return nil, errors.New("unknown ObjectOwner type")
