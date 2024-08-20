@@ -38,6 +38,12 @@ type ObjectOwnerWrapper struct {
 
 // UnmarshalJSON custom unmarshaller for ObjectOwnerWrapper
 func (w *ObjectOwnerWrapper) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		w.ObjectOwner = ObjectOwner_String(s)
+		return nil
+	}
+
 	var obj map[string]json.RawMessage
 	if err := json.Unmarshal(data, &obj); err != nil {
 		return err
@@ -68,12 +74,6 @@ func (w *ObjectOwnerWrapper) UnmarshalJSON(data []byte) error {
 		}
 
 		w.ObjectOwner = o
-		return nil
-	}
-
-	var s string
-	if err := json.Unmarshal(data, &s); err == nil {
-		w.ObjectOwner = ObjectOwner_String(s)
 		return nil
 	}
 

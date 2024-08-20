@@ -330,7 +330,7 @@ type SuiObjectData struct {
 	PreviousTransaction *string                `json:"previousTransaction,omitempty"`
 	StorageRebate       *string                `json:"storageRebate,omitempty"`
 	Display             *DisplayFieldsResponse `json:"display,omitempty"`
-	Content             *SuiParsedData         `json:"content,omitempty"`
+	Content             *SuiParsedDataWrapper  `json:"content,omitempty"`
 	Bcs                 *RawData               `json:"bcs,omitempty"`
 }
 
@@ -339,21 +339,6 @@ type DisplayFieldsResponse struct {
 	Data  *map[string]string          `json:"data,omitempty"`
 	Error *ObjectResponseErrorWrapper `json:"error,omitempty"`
 }
-
-type SuiParsedData struct {
-	DataType          SuiParsedDataType       `json:"dataType"`                    //
-	Type              *string                 `json:"type,omitempty"`              // through moveObject
-	HasPublicTransfer *bool                   `json:"hasPublicTransfer,omitempty"` // through moveObject
-	Fields            *interface{}            `json:"fields,omitempty"`            // through moveObject, native type: MoveStruct
-	Disassembled      *map[string]interface{} `json:"disassembled,omitempty"`      // through package
-}
-
-type SuiParsedDataType string
-
-var (
-	Package    SuiParsedDataType = "package"
-	MoveObject SuiParsedDataType = "moveObject"
-)
 
 type RawData struct {
 	DataType          string                 `json:"dataType"`                    //
