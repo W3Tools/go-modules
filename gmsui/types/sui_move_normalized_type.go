@@ -106,7 +106,7 @@ func (w *SuiMoveNormalizedTypeWrapper) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	return errors.New("unknown SuiMoveNormalizedType")
+	return errors.New("unknown SuiMoveNormalizedType type")
 }
 
 func (w SuiMoveNormalizedTypeWrapper) MarshalJSON() ([]byte, error) {

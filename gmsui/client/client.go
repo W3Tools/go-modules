@@ -237,7 +237,7 @@ func (client *SuiClient) GetOwnedObjects(input types.GetOwnedObjectsParams) (res
 }
 
 // Return the object information for a specified version
-func (client *SuiClient) TryGetPastObject(input types.TryGetPastObjectParams) (response *types.ObjectRead, err error) {
+func (client *SuiClient) TryGetPastObject(input types.TryGetPastObjectParams) (response *types.ObjectReadWrapper, err error) {
 	return response, client.request(
 		SuiTransportRequestOptions{
 			Method: "sui_tryGetPastObject",
