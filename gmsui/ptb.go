@@ -2,7 +2,6 @@ package gmsui
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -131,7 +130,8 @@ func (ptb *ProgrammableTransactionBlock) NewMergeCoins(distination string, sourc
 	var sourceArguments []sui_types.Argument
 	for _, object := range coinObjects {
 		if object.Error != nil {
-			return nil, fmt.Errorf("invalid coin object %s, cause: %v", object.Error.ObjectId, object.Error.Code)
+			ebytes, err := object.Error.MarshalJSON()
+			return nil, fmt.Errorf("invalid coin object, cause: %v, marshal error: %v", string(ebytes), err)
 		}
 
 		objectId, err := sui_types.NewObjectIdFromHex(object.Data.ObjectId)
@@ -214,126 +214,123 @@ func (ptb *ProgrammableTransactionBlock) NewMoveCall(target string, args []inter
 	return &returnArgument, nil
 }
 
-// txContext should be nil
+type ArgumentType string
+
+const (
+	Pure   ArgumentType = "Pure"
+	Object ArgumentType = "Object"
+)
+
+type ResolveArgument struct {
+	Type           ArgumentType                `json:"type"`
+	PureValue      interface{}                 `json:"pureValue"`
+	ObjectValue    sui_types.ObjectArg         `json:"objectValue"`
+	Id             string                      `json:"id"`
+	NormalizedType types.SuiMoveNormalizedType `json:"normalizedType"`
+}
+
 func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, args []interface{}) (arguments []sui_types.Argument, err error) {
 	entry := strings.Split(target, "::")
 	if len(entry) != 3 {
 		return nil, fmt.Errorf("invalid target [%s]", target)
 	}
 
-	functionArgumentTypes, err := ptb.client.GetMoveFunctionArgTypes(types.GetMoveFunctionArgTypesParams{Package: entry[0], Module: entry[1], Function: entry[2]})
-	if err != nil {
-		return nil, err
-	}
-	if len(functionArgumentTypes) > 0 && args == nil {
-		return nil, fmt.Errorf("invalid arg length, required: %d, but got nil", len(functionArgumentTypes))
-	}
-	if len(functionArgumentTypes) != len(args) {
-		return nil, fmt.Errorf("invalid arg length, required: %d, but got %d", len(functionArgumentTypes), len(args))
-	}
-
-	objectIds := []string{}
-	for idx, arg := range functionArgumentTypes {
-		jsb, err := json.Marshal(arg)
+	{
+		normalized, err := ptb.client.GetNormalizedMoveFunction(
+			types.GetNormalizedMoveFunctionParams{
+				Package:  utils.NormalizeSuiObjectId(entry[0]),
+				Module:   entry[1],
+				Function: entry[2],
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
-		if string(jsb) == `{"Object":"ByImmutableReference"}` || string(jsb) == `{"Object":"ByMutableReference"}` {
-			if args[idx] == nil {
+
+		hasTxContext := false
+		if len(normalized.Parameters) > 0 && isTxContext(normalized.Parameters[len(normalized.Parameters)-1].SuiMoveNormalizedType) {
+			hasTxContext = true
+		}
+
+		if hasTxContext {
+			normalized.Parameters = normalized.Parameters[:len(args)]
+		}
+
+		if len(args) != len(normalized.Parameters) {
+			return nil, fmt.Errorf("incorrect number of arguments")
+		}
+
+		argumentToResolve := []*ResolveArgument{}
+		for idx, param := range normalized.Parameters {
+			arg := args[idx]
+
+			structVal := extractStructTag(param.SuiMoveNormalizedType)
+			if structVal != nil {
+				argumentToResolve = append(argumentToResolve, &ResolveArgument{Type: Object, Id: arg.(string), NormalizedType: param.SuiMoveNormalizedType})
 				continue
 			}
-			input, ok := args[idx].(string)
+
+			stringType, ok := param.SuiMoveNormalizedType.(types.SuiMoveNormalizedType_String)
 			if !ok {
-				return nil, fmt.Errorf("invalid object input, index %d, value: %v", idx, args[idx])
-			}
-			if !utils.IsHex(utils.NormalizeSuiObjectId(input)) {
-				return nil, fmt.Errorf("input data not object, index %d, value: %v", idx, input)
+				return nil, fmt.Errorf("invalid parameter type %v", param.SuiMoveNormalizedType)
 			}
 
-			objectIds = append(objectIds, utils.NormalizeSuiObjectId(input))
-		}
-	}
-
-	inputObjects, _, err := GetObjectsAndUnmarshal[any](ptb.client, objectIds)
-	if err != nil {
-		return nil, err
-	}
-
-	// dd, _ := json.Marshal(inputObjects)
-	// fmt.Printf("ids: %v\n", string(dd))
-	// fmt.Printf("functionArgumentTypes: %v\n", functionArgumentTypes)
-
-	for idx, inputArgument := range args {
-		stringType, err := json.Marshal(functionArgumentTypes[idx])
-		if err != nil {
-			return nil, fmt.Errorf("argument type json marshal failed %v", err)
-		}
-
-		switch string(stringType) {
-		case `"Pure"`:
-			var argument = sui_types.Argument{}
-			switch inputArgument := inputArgument.(type) {
-			case string:
-				if strings.HasPrefix(inputArgument, "0x") {
-					address, err := sui_types.NewAddressFromHex(inputArgument)
-					if err != nil {
-						return nil, fmt.Errorf("argument type to address failed %v", err)
-					}
-					argument, err = ptb.builder.Pure(address)
-					if err != nil {
-						return nil, fmt.Errorf("input argument to pure data failed %v", err)
-					}
-				} else {
-					argument, err = ptb.builder.Pure(inputArgument)
-					if err != nil {
-						return nil, fmt.Errorf("input argument to pure data failed %v", err)
-					}
+			switch stringType {
+			case "Bool", "U8", "U16", "U32", "U64", "U128", "U256":
+			case "Address":
+				arg, err = sui_types.NewAddressFromHex(utils.NormalizeSuiObjectId(arg.(string)))
+				if err != nil {
+					return nil, err
 				}
 			default:
-				argument, err = ptb.builder.Pure(inputArgument)
-				if err != nil {
-					return nil, fmt.Errorf("input argument to pure data failed %v", err)
+				return nil, fmt.Errorf("unimplemented sui move normalized type, index: %d, type: %v", idx, param)
+			}
+			argumentToResolve = append(argumentToResolve, &ResolveArgument{Type: Pure, PureValue: arg})
+		}
+
+		var ids []string
+		for _, argResolve := range argumentToResolve {
+			if argResolve.Type == Object {
+				ids = append(ids, argResolve.Id)
+			}
+		}
+
+		if len(ids) > 0 {
+			objects, err := ptb.client.MultiGetObjects(types.MultiGetObjectsParams{IDs: ids, Options: &types.SuiObjectDataOptions{ShowOwner: true}})
+			if err != nil {
+				return nil, err
+			}
+
+			for _, resolve := range argumentToResolve {
+				if resolve.Type == Pure {
+					continue
 				}
-			}
-			arguments = append(arguments, argument)
-		case `{"Object":"ByMutableReference"}`, `{"Object":"ByImmutableReference"}`:
-			if inputArgument == nil {
-				continue
-			}
+				objectInfo := gm.FilterOne(objects, func(v *types.SuiObjectResponse) bool {
+					return v.Data.ObjectId == utils.NormalizeSuiObjectId(resolve.Id)
+				})
+				objectId, err := sui_types.NewObjectIdFromHex(objectInfo.Data.ObjectId)
+				if err != nil {
+					return nil, err
+				}
 
-			mutable := false
-			if strings.Contains(string(stringType), "ByMutableReference") {
-				mutable = true
-			}
+				var initialSharedVersion *uint64
+				sharedObject, ok := objectInfo.Data.Owner.ObjectOwner.(types.ObjectOwner_Shared)
+				if ok {
+					initialSharedVersion = &sharedObject.Shared.InitialSharedVersion
+				}
 
-			objectInfo := gm.FilterOne(inputObjects, func(v *types.SuiObjectResponse) bool {
-				return v.Data.ObjectId == utils.NormalizeSuiObjectId(inputArgument.(string))
-			})
-
-			var objectArgs sui_types.ObjectArg
-			if objectInfo.Data.Owner != nil {
-				owner := *objectInfo.Data.Owner
-				sharedObject, isSharedObject := owner.ObjectOwner.(types.ObjectOwner_Shared)
-				if isSharedObject {
-					objectId, err := sui_types.NewObjectIdFromHex(objectInfo.Data.ObjectId)
-					if err != nil {
-						return nil, err
-					}
-					objectArgs.SharedObject = &struct {
+				if initialSharedVersion != nil {
+					mutable := extractMutableReference(resolve.NormalizedType) != nil
+					resolve.ObjectValue.SharedObject = &struct {
 						Id                   move_types.AccountAddress
 						InitialSharedVersion uint64
 						Mutable              bool
 					}{
 						Id:                   *objectId,
-						InitialSharedVersion: sharedObject.Shared.InitialSharedVersion,
+						InitialSharedVersion: *initialSharedVersion,
 						Mutable:              mutable,
 					}
 				} else {
-					objectId, err := sui_types.NewObjectIdFromHex(objectInfo.Data.ObjectId)
-					if err != nil {
-						return nil, err
-					}
-
 					version, err := strconv.ParseUint(objectInfo.Data.Version, 10, 64)
 					if err != nil {
 						return nil, err
@@ -343,22 +340,30 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 					if err != nil {
 						return nil, err
 					}
-
-					objectArgs.ImmOrOwnedObject = &sui_types.ObjectRef{
+					resolve.ObjectValue.ImmOrOwnedObject = &sui_types.ObjectRef{
 						ObjectId: *objectId,
 						Version:  version,
 						Digest:   *digest,
 					}
 				}
 			}
+		}
 
-			pureData, err := ptb.builder.Obj(objectArgs)
-			if err != nil {
-				return nil, err
+		for _, arg := range argumentToResolve {
+			switch arg.Type {
+			case Pure:
+				argument, err := ptb.builder.Pure(arg.PureValue)
+				if err != nil {
+					return nil, err
+				}
+				arguments = append(arguments, argument)
+			case Object:
+				argument, err := ptb.builder.Obj(arg.ObjectValue)
+				if err != nil {
+					return nil, err
+				}
+				arguments = append(arguments, argument)
 			}
-			arguments = append(arguments, pureData)
-		default:
-			return nil, fmt.Errorf("function argument types %s not match", string(stringType))
 		}
 	}
 	return
@@ -609,4 +614,50 @@ func findObjectFromBuilderArgs(args map[string]sui_types.CallArg, objectId strin
 	}
 
 	return false
+}
+
+// checking
+func isTxContext(param types.SuiMoveNormalizedType) bool {
+	structType := extractStructTag(param)
+	if structType == nil {
+		return false
+	}
+
+	return structType.Struct.Address == "0x2" && structType.Struct.Module == "tx_context" && structType.Struct.Name == "TxContext"
+}
+
+func extractStructTag(normalizedType types.SuiMoveNormalizedType) *types.SuiMoveNormalizedType_Struct {
+	_struct, ok := normalizedType.(types.SuiMoveNormalizedType_Struct)
+	if ok {
+		return &_struct
+	}
+
+	ref := extractReference(normalizedType)
+	mutRef := extractMutableReference(normalizedType)
+
+	if ref != nil {
+		return extractStructTag(ref)
+	}
+
+	if mutRef != nil {
+		return extractStructTag(mutRef)
+	}
+
+	return nil
+}
+
+func extractReference(normalizedType types.SuiMoveNormalizedType) types.SuiMoveNormalizedType {
+	reference, ok := normalizedType.(types.SuiMoveNormalizedType_Reference)
+	if ok {
+		return reference.Reference.SuiMoveNormalizedType
+	}
+	return nil
+}
+
+func extractMutableReference(normalizedType types.SuiMoveNormalizedType) types.SuiMoveNormalizedType {
+	mutableReference, ok := normalizedType.(types.SuiMoveNormalizedType_MutableReference)
+	if ok {
+		return mutableReference.MutableReference.SuiMoveNormalizedType
+	}
+	return nil
 }
