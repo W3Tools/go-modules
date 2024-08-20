@@ -154,3 +154,56 @@ func (w MoveValueWrapper) MarshalJSON() ([]byte, error) {
 		return nil, errors.New("unknown MoveValue type")
 	}
 }
+
+// ------------------SuiMoveFunctionArgType------------------
+type SuiMoveFunctionArgType interface {
+	isSuiMoveFunctionArgType()
+}
+
+type SuiMoveFunctionArgStringType string
+type SuiMoveFunctionArgObjectType struct {
+	Object ObjectValueKind `json:"Object"`
+}
+
+func (SuiMoveFunctionArgStringType) isSuiMoveFunctionArgType() {}
+func (SuiMoveFunctionArgObjectType) isSuiMoveFunctionArgType() {}
+
+type SuiMoveFunctionArgTypeWrapper struct {
+	SuiMoveFunctionArgType
+}
+
+func (w *SuiMoveFunctionArgTypeWrapper) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		w.SuiMoveFunctionArgType = SuiMoveFunctionArgStringType(str)
+		return nil
+	}
+
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+
+	if _, ok := obj["Object"]; ok {
+		var at SuiMoveFunctionArgObjectType
+		if err := json.Unmarshal(data, &at); err != nil {
+			return err
+		}
+
+		w.SuiMoveFunctionArgType = at
+		return nil
+	}
+
+	return errors.New("unknown SuiMoveFunctionArgType type")
+}
+
+func (w SuiMoveFunctionArgTypeWrapper) MarshalJSON() ([]byte, error) {
+	switch v := w.SuiMoveFunctionArgType.(type) {
+	case SuiMoveFunctionArgStringType:
+		return json.Marshal(string(v))
+	case SuiMoveFunctionArgObjectType:
+		return json.Marshal(SuiMoveFunctionArgObjectType{Object: v.Object})
+	default:
+		return nil, errors.New("unknown SuiMoveFunctionArgType type")
+	}
+}
