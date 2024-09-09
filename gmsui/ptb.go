@@ -94,6 +94,9 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 			}
 			input, ok := args[idx].(string)
 			if !ok {
+				if _, ok := args[idx].(*sui_types.Argument); ok {
+					continue
+				}
 				return nil, fmt.Errorf("invalid object input, index %d, value: %v", idx, args[idx])
 			}
 			if !utils.IsHex(utils.NormalizeSuiObjectId(input)) {
@@ -104,14 +107,13 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 		}
 	}
 
-	inputObjects, _, err := GetObjectsAndUnmarshal[any](ptb.client, objectIds)
-	if err != nil {
-		return nil, err
+	var inputObjects []*types.SuiObjectResponse
+	if len(objectIds) > 0 {
+		inputObjects, _, err = GetObjectsAndUnmarshal[any](ptb.client, objectIds)
+		if err != nil {
+			return nil, err
+		}
 	}
-
-	// dd, _ := json.Marshal(inputObjects)
-	// fmt.Printf("ids: %v\n", string(dd))
-	// fmt.Printf("functionArgumentTypes: %v\n", functionArgumentTypes)
 
 	for idx, inputArgument := range args {
 		stringType, err := json.Marshal(functionArgumentTypes[idx])
@@ -151,12 +153,17 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 				continue
 			}
 
+			if iargument, ok := inputArgument.(*sui_types.Argument); ok {
+				arguments = append(arguments, *iargument)
+				continue
+			}
+
 			mutable := false
 			if strings.Contains(string(stringType), "ByMutableReference") {
 				mutable = true
 			}
 
-			objectInfo := gm.FilterOne(*inputObjects, func(v types.SuiObjectResponse) bool {
+			objectInfo := gm.FilterOne(inputObjects, func(v *types.SuiObjectResponse) bool {
 				return v.Data.ObjectId == utils.NormalizeSuiObjectId(inputArgument.(string))
 			})
 
