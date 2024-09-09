@@ -1,24 +1,5 @@
 package types
 
-import (
-	"encoding/json"
-)
-
-type PaginatedCoins struct {
-	Data        []CoinStruct `json:"data"`
-	HasNextPage bool         `json:"hasNextPage"`
-	NextCursor  *string      `json:"nextCursor,omitempty"`
-}
-
-type CoinStruct struct {
-	Balance             string `json:"balance"`
-	CoinObjectId        string `json:"coinObjectId"`
-	CoinType            string `json:"coinType"`
-	Digest              string `json:"digest"`
-	PreviousTransaction string `json:"previousTransaction"`
-	Version             string `json:"version"`
-}
-
 type Balance struct {
 	CoinObjectCount int               `json:"coinObjectCount"`
 	CoinType        string            `json:"coinType"`
@@ -26,94 +7,11 @@ type Balance struct {
 	TotalBalance    string            `json:"totalBalance"`
 }
 
-type CoinMetadata struct {
-	Decimals    uint8  `json:"decimals"`
-	Description string `json:"description"`
-	IconUrl     string `json:"iconUrl,omitempty"`
-	ID          string `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Symbol      string `json:"symbol"`
+type BalanceChange struct {
+	Owner    ObjectOwnerWrapper `json:"owner"`
+	CoinType string             `json:"coinType"`
+	Amount   string             `json:"amount"`
 }
-
-type CoinSupply struct {
-	Value string `json:"value"`
-}
-
-type SuiObjectResponse struct {
-	Data  *SuiObjectData       `json:"data,omitempty"`
-	Error *ObjectResponseError `json:"error,omitempty"`
-}
-
-type PaginatedObjectsResponse struct {
-	Data        []SuiObjectResponse `json:"data"`
-	NextCursor  *string             `json:"nextCursor,omitempty"`
-	HasNextPage bool                `json:"hasNextPage"`
-}
-
-type ObjectRead struct {
-	Details *json.RawMessage `json:"details"`
-	Status  string           `json:"status"`
-}
-
-type DynamicFieldPage struct {
-	Data        []DynamicFieldInfo `json:"data"`
-	NextCursor  *string            `json:"nextCursor,omitempty"`
-	HasNextPage bool               `json:"hasNextPage"`
-}
-
-type SuiTransactionBlockResponse struct {
-	Digest                  string               `json:"digest"`
-	Transaction             *SuiTransactionBlock `json:"transaction,omitempty"`
-	RawTransaction          string               `json:"rawTransaction,omitempty"`
-	Effects                 *TransactionEffects  `json:"effects,omitempty"`
-	Events                  *[]SuiEvent          `json:"events,omitempty"`
-	ObjectChanges           *[]SuiObjectChange   `json:"objectChanges,omitempty"`
-	BalanceChanges          *[]BalanceChange     `json:"balanceChanges,omitempty"`
-	TimestampMs             *string              `json:"timestampMs,omitempty"`
-	Checkpoint              *string              `json:"checkpoint,omitempty"`
-	ConfirmedLocalExecution *bool                `json:"confirmedLocalExecution,omitempty"`
-	Errors                  []string             `json:"errors,omitempty"`
-}
-
-type PaginatedTransactionResponse struct {
-	Data        []SuiTransactionBlockResponse `json:"data"`
-	NextCursor  *string                       `json:"nextCursor,omitempty"`
-	HasNextPage bool                          `json:"hasNextPage"`
-}
-
-type PaginatedEvents struct {
-	Data        []SuiEvent `json:"data"`
-	NextCursor  *EventId   `json:"nextCursor,omitempty"`
-	HasNextPage bool       `json:"hasNextPage"`
-}
-
-type ProtocolConfig struct {
-	MinSupportedProtocolVersion string                         `json:"minSupportedProtocolVersion"`
-	MaxSupportedProtocolVersion string                         `json:"maxSupportedProtocolVersion"`
-	ProtocolVersion             string                         `json:"protocolVersion"`
-	FeatureFlags                map[string]bool                `json:"featureFlags"`
-	Attributes                  map[string]ProtocolConfigValue `json:"attributes"`
-}
-
-type ProtocolConfigValue interface {
-	isProtocolConfigValue()
-}
-
-type ProtocolConfigValue_u32 struct {
-	U32 string `json:"u32"`
-}
-
-type ProtocolConfigValue_u64 struct {
-	U64 string `json:"u64"`
-}
-
-type ProtocolConfigValue_f64 struct {
-	F64 string `json:"f64"`
-}
-
-func (ProtocolConfigValue_u32) isProtocolConfigValue() {}
-func (ProtocolConfigValue_u64) isProtocolConfigValue() {}
-func (ProtocolConfigValue_f64) isProtocolConfigValue() {}
 
 type Checkpoint struct {
 	Epoch                      string                 `json:"epoch"`
@@ -129,10 +27,378 @@ type Checkpoint struct {
 	ValidatorSignature         string                 `json:"validatorSignature"`
 }
 
-type CheckpointPage struct {
-	Data        []Checkpoint `json:"data"`
-	NextCursor  *string      `json:"nextCursor,omitempty"`
+type GasCostSummary struct {
+	ComputationCost         string `json:"computationCost"`
+	StorageCost             string `json:"storageCost"`
+	StorageRebate           string `json:"storageRebate"`
+	NonRefundableStorageFee string `json:"nonRefundableStorageFee"`
+}
+
+type EndOfEpochData struct {
+	EpochCommitments         []CheckpointCommitment `json:"epochCommitments"`
+	NextEpochCommittee       [][2]string            `json:"nextEpochCommittee"`
+	NextEpochProtocolVersion string                 `json:"nextEpochProtocolVersion"`
+}
+
+type CheckpointCommitment struct {
+	ECMHLiveObjectSetDigest ECMHLiveObjectSetDigest `json:"ecmhLiveObjectSetDigest"`
+}
+
+type ECMHLiveObjectSetDigest struct {
+	Digest []int `json:"digest"` // TODO: bytes?
+}
+
+type CheckpointId string
+
+type Claim struct {
+	IndexMod4 uint64 `json:"indexMod4"`
+	Value     string `json:"value"`
+}
+
+type CoinStruct struct {
+	Balance             string `json:"balance"`
+	CoinObjectId        string `json:"coinObjectId"`
+	CoinType            string `json:"coinType"`
+	Digest              string `json:"digest"`
+	PreviousTransaction string `json:"previousTransaction"`
+	Version             string `json:"version"`
+}
+
+type CommitteeInfo struct {
+	Epoch      string      `json:"epoch"`
+	Validators [][2]string `json:"validators"`
+}
+
+type DelegatedStake struct {
+	ValidatorAddress string               `json:"validatorAddress"`
+	StakingPool      string               `json:"stakingPool"`
+	Stakes           []StakeObjectWrapper `json:"stakes"`
+}
+
+type DevInspectResults struct {
+	Effects TransactionEffects   `json:"effects"`
+	Error   string               `json:"error,omitempty"`
+	Events  []SuiEvent           `json:"events"`
+	Results []SuiExecutionResult `json:"results,omitempty"`
+}
+
+type TransactionEffects struct {
+	MessageVersion       string                                      `json:"messageVersion"`
+	Status               ExecutionStatus                             `json:"status"`
+	ExecutedEpoch        string                                      `json:"executedEpoch"`
+	GasUsed              GasCostSummary                              `json:"gasUsed"`
+	ModifiedAtVersions   []TransactionBlockEffectsModifiedAtVersions `json:"modifiedAtVersions,omitempty"`
+	SharedObjects        []SuiObjectRef                              `json:"sharedObjects,omitempty"`
+	TransactionDigest    string                                      `json:"transactionDigest"`
+	Created              []OwnedObjectRef                            `json:"created,omitempty"`
+	Mutated              []OwnedObjectRef                            `json:"mutated,omitempty"`
+	Deleted              []SuiObjectRef                              `json:"deleted,omitempty"`
+	GasObject            OwnedObjectRef                              `json:"gasObject"`
+	EventsDigest         *string                                     `json:"eventsDigest,omitempty"`
+	Dependencies         []string                                    `json:"dependencies,omitempty"`
+	Unwrapped            []OwnedObjectRef                            `json:"unwrapped,omitempty"`
+	UnwrappedThenDeleted []SuiObjectRef                              `json:"unwrappedThenDeleted,omitempty"`
+	Wrapped              []SuiObjectRef                              `json:"wrapped,omitempty"`
+}
+
+type ExecutionStatus struct {
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+type TransactionBlockEffectsModifiedAtVersions struct {
+	ObjectId       string `json:"objectId"`
+	SequenceNumber string `json:"sequenceNumber"`
+}
+
+type SuiObjectRef struct {
+	ObjectId string `json:"objectId"`
+	Version  uint64 `json:"version"`
+	Digest   string `json:"digest"`
+}
+
+type OwnedObjectRef struct {
+	Owner     ObjectOwnerWrapper `json:"owner"`
+	Reference SuiObjectRef       `json:"reference"`
+}
+
+type SuiEvent struct {
+	Id                EventId     `json:"id"`
+	PackageId         string      `json:"packageId"`
+	TransactionModule string      `json:"transactionModule"`
+	Sender            string      `json:"sender"`
+	Type              string      `json:"type"`
+	ParsedJson        interface{} `json:"parsedJson"`
+	Bcs               string      `json:"bcs"`
+	TimestampMs       string      `json:"timestampMs,omitempty"`
+}
+
+type EventId struct {
+	TxDigest string `json:"txDigest"`
+	EventSeq string `json:"eventSeq"`
+}
+
+type SuiExecutionResult struct {
+	MutableReferenceOutputs [][3]interface{} `json:"mutableReferenceOutputs,omitempty"` // TODO: [SuiArgument, bytes, string][]
+	ReturnValues            [][2]interface{} `json:"returnValues,omitempty"`            // TODO: interface -> [bytes, string][]
+}
+
+type DisplayFieldsResponse struct {
+	Data  *map[string]string          `json:"data,omitempty"`
+	Error *ObjectResponseErrorWrapper `json:"error,omitempty"`
+}
+
+type DryRunTransactionBlockResponse struct {
+	Effects        TransactionEffects       `json:"effects"`
+	Events         []SuiEvent               `json:"events"`
+	ObjectChanges  []SuiObjectChangeWrapper `json:"objectChanges"`
+	BalanceChanges []BalanceChange          `json:"balanceChanges"`
+	Input          TransactionBlockData     `json:"input"`
+}
+
+type TransactionBlockData struct {
+	MessageVersion string                         `json:"messageVersion"`
+	Transaction    SuiTransactionBlockKindWrapper `json:"transaction"`
+	Sender         string                         `json:"sender"`
+	GasData        SuiGasData                     `json:"gasData"`
+}
+
+type SuiGasData struct {
+	Payment []SuiObjectRef `json:"payment"`
+	Owner   string         `json:"owner"`
+	Price   string         `json:"price"`
+	Budget  string         `json:"budget"`
+}
+
+type DynamicFieldInfo struct {
+	Name       DynamicFieldName `json:"name"`
+	BcsName    string           `json:"bcsName"`
+	Type       DynamicFieldType `json:"type"`
+	ObjectType string           `json:"objectType"`
+	ObjectId   string           `json:"objectId"`
+	Version    int64            `json:"version"`
+	Digest     string           `json:"digest"`
+}
+
+type DynamicFieldName struct {
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
+}
+
+type DynamicFieldType string
+
+var (
+	DynamicField  DynamicFieldType = "DynamicField"
+	DynamicObject DynamicFieldType = "DynamicObject"
+)
+
+type ExecuteTransactionRequestType string
+
+var (
+	WaitForEffectsCert    ExecuteTransactionRequestType = "WaitForEffectsCert"
+	WaitForLocalExecution ExecuteTransactionRequestType = "WaitForLocalExecution"
+)
+
+type SuiObjectData struct {
+	ObjectId            string                 `json:"objectId"`
+	Version             string                 `json:"version"`
+	Digest              string                 `json:"digest"`
+	Type                *string                `json:"type,omitempty"`
+	Owner               *ObjectOwnerWrapper    `json:"owner,omitempty"`
+	PreviousTransaction *string                `json:"previousTransaction,omitempty"`
+	StorageRebate       *string                `json:"storageRebate,omitempty"`
+	Display             *DisplayFieldsResponse `json:"display,omitempty"`
+	Content             *SuiParsedDataWrapper  `json:"content,omitempty"`
+	Bcs                 *RawDataWrapper        `json:"bcs,omitempty"`
+}
+
+type SuiObjectDataOptions struct {
+	ShowBcs                 bool `json:"showBcs,omitempty"`
+	ShowContent             bool `json:"showContent,omitempty"`
+	ShowDisplay             bool `json:"showDisplay,omitempty"`
+	ShowOwner               bool `json:"showOwner,omitempty"`
+	ShowPreviousTransaction bool `json:"showPreviousTransaction,omitempty"`
+	ShowStorageRebate       bool `json:"showStorageRebate,omitempty"`
+	ShowType                bool `json:"showType,omitempty"`
+}
+
+type SuiObjectResponseQuery struct {
+	Filter  *SuiObjectDataFilter  `json:"filter,omitempty"`
+	Options *SuiObjectDataOptions `json:"options,omitempty"`
+}
+
+type PaginatedCoins struct {
+	Data        []CoinStruct `json:"data"`
 	HasNextPage bool         `json:"hasNextPage"`
+	NextCursor  *string      `json:"nextCursor,omitempty"`
+}
+
+type PaginatedDynamicFieldInfos struct {
+	Data        []DynamicFieldInfo `json:"data"`
+	NextCursor  *string            `json:"nextCursor,omitempty"`
+	HasNextPage bool               `json:"hasNextPage"`
+}
+
+type PaginatedEvents struct {
+	Data        []SuiEvent `json:"data"`
+	NextCursor  *EventId   `json:"nextCursor,omitempty"`
+	HasNextPage bool       `json:"hasNextPage"`
+}
+
+type PaginatedStrings struct {
+	Data        []string `json:"data"`
+	NextCursor  *string  `json:"nextCursor,omitempty"`
+	HasNextPage bool     `json:"hasNextPage"`
+}
+
+type PaginatedObjectsResponse struct {
+	Data        []SuiObjectResponse `json:"data"`
+	NextCursor  *string             `json:"nextCursor,omitempty"`
+	HasNextPage bool                `json:"hasNextPage"`
+}
+
+type SuiObjectResponse struct {
+	Data  *SuiObjectData              `json:"data,omitempty"`
+	Error *ObjectResponseErrorWrapper `json:"error,omitempty"`
+}
+
+type PaginatedTransactionResponse struct {
+	Data        []SuiTransactionBlockResponse `json:"data"`
+	NextCursor  *string                       `json:"nextCursor,omitempty"`
+	HasNextPage bool                          `json:"hasNextPage"`
+}
+
+type SuiTransactionBlockResponse struct {
+	Digest                  string                    `json:"digest"`
+	Transaction             *SuiTransactionBlock      `json:"transaction,omitempty"`
+	RawTransaction          string                    `json:"rawTransaction,omitempty"`
+	Effects                 *TransactionEffects       `json:"effects,omitempty"`
+	Events                  []*SuiEvent               `json:"events,omitempty"`
+	ObjectChanges           []*SuiObjectChangeWrapper `json:"objectChanges,omitempty"`
+	BalanceChanges          []*BalanceChange          `json:"balanceChanges,omitempty"`
+	TimestampMs             *string                   `json:"timestampMs,omitempty"`
+	Checkpoint              *string                   `json:"checkpoint,omitempty"`
+	ConfirmedLocalExecution *bool                     `json:"confirmedLocalExecution,omitempty"`
+	Errors                  []string                  `json:"errors,omitempty"`
+}
+
+type SuiTransactionBlock struct {
+	Data         TransactionBlockData `json:"data"`
+	TxSignatures []string             `json:"txSignatures"`
+}
+
+type ProtocolConfig struct {
+	MinSupportedProtocolVersion string                         `json:"minSupportedProtocolVersion"`
+	MaxSupportedProtocolVersion string                         `json:"maxSupportedProtocolVersion"`
+	ProtocolVersion             string                         `json:"protocolVersion"`
+	FeatureFlags                map[string]bool                `json:"featureFlags"`
+	Attributes                  map[string]ProtocolConfigValue `json:"attributes"`
+}
+
+type SuiActiveJwk struct {
+	Epoch string   `json:"epoch"`
+	Jwk   SuiJWK   `json:"jwk"`
+	JwkID SuiJwkID `json:"jwk_id"`
+}
+
+type SuiJWK struct {
+	Alg string `json:"alg"`
+	E   string `json:"e"`
+	Kty string `json:"kty"`
+	N   string `json:"n"`
+}
+
+type SuiJwkID struct {
+	Iss string `json:"iss"`
+	Kid string `json:"kid"`
+}
+
+type SuiAuthenticatorStateExpire struct {
+	MinEpoch string `json:"min_epoch"`
+}
+
+type SuiChangeEpoch struct {
+	ComputationCharge     string `json:"computation_charge"`
+	Epoch                 string `json:"epoch"`
+	EpochStartTimestampMs string `json:"epoch_start_timestamp_ms"`
+	StorageCharge         string `json:"storage_charge"`
+	StorageRebate         string `json:"storage_rebate"`
+}
+
+type CoinMetadata struct {
+	Decimals    uint8  `json:"decimals"`
+	Description string `json:"description"`
+	IconUrl     string `json:"iconUrl,omitempty"`
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Symbol      string `json:"symbol"`
+}
+
+type SuiMoveAbilitySet struct {
+	Abilities []SuiMoveAbility `json:"abilities"`
+}
+
+type SuiMoveAbility string
+
+var (
+	Copy  SuiMoveAbility = "Copy"
+	Drop  SuiMoveAbility = "Drop"
+	Store SuiMoveAbility = "Store"
+	Key   SuiMoveAbility = "Key"
+)
+
+type SuiMoveModuleId struct {
+	Address string `json:"address"`
+	Name    string `json:"name"`
+}
+
+type SuiMoveNormalizedField struct {
+	Name string                       `json:"name"`
+	Type SuiMoveNormalizedTypeWrapper `json:"type"`
+}
+
+type SuiMoveNormalizedFunction struct {
+	Visibility     SuiMoveVisibility               `json:"visibility"`
+	IsEntry        bool                            `json:"isEntry"`
+	TypeParameters []SuiMoveAbilitySet             `json:"typeParameters"`
+	Parameters     []*SuiMoveNormalizedTypeWrapper `json:"parameters"`
+	Return         []*SuiMoveNormalizedTypeWrapper `json:"return"`
+}
+
+type SuiMoveVisibility string
+
+var (
+	Private SuiMoveVisibility = "Private"
+	Public  SuiMoveVisibility = "Public"
+	Friend  SuiMoveVisibility = "Friend"
+)
+
+type SuiMoveNormalizedModule struct {
+	FileFormatVersion int                                  `json:"fileFormatVersion"`
+	Address           string                               `json:"address"`
+	Name              string                               `json:"name"`
+	Friends           []SuiMoveModuleId                    `json:"friends"`
+	Structs           map[string]SuiMoveNormalizedStruct   `json:"structs"`
+	ExposedFunctions  map[string]SuiMoveNormalizedFunction `json:"exposedFunctions"`
+}
+
+type SuiMoveNormalizedStruct struct {
+	Abilities      SuiMoveAbilitySet            `json:"abilities"`
+	TypeParameters []SuiMoveStructTypeParameter `json:"typeParameters"`
+	Fields         []SuiMoveNormalizedField     `json:"fields"`
+}
+
+type SuiMoveStructTypeParameter struct {
+	Constraints SuiMoveAbilitySet `json:"constraints"`
+	IsPhantom   bool              `json:"isPhantom"`
+}
+
+type MoveCallSuiTransaction struct {
+	Package       string               `json:"package"`
+	Module        string               `json:"module"`
+	Function      string               `json:"function"`
+	TypeArguments []*string            `json:"type_arguments,omitempty"`
+	Arguments     []SuiArgumentWrapper `json:"arguments"`
 }
 
 type SuiSystemStateSummary struct {
@@ -171,7 +437,7 @@ type SuiSystemStateSummary struct {
 	InactivePoolsSize                     string                `json:"inactivePoolsSize"`
 	ValidatorCandidatesId                 string                `json:"validatorCandidatesId"`
 	ValidatorCandidatesSize               string                `json:"validatorCandidatesSize"`
-	AtRiskValidators                      [][2]interface{}      `json:"atRiskValidators"`
+	AtRiskValidators                      [][2]string           `json:"atRiskValidators"`
 	ValidatorReportRecords                [][2]interface{}      `json:"validatorReportRecords"`
 }
 
@@ -217,171 +483,35 @@ type SuiValidatorSummary struct {
 	ExchangeRatesSize            string  `json:"exchangeRatesSize"`
 }
 
-type CommitteeInfo struct {
-	Epoch      string      `json:"epoch"`
-	Validators [][2]string `json:"validators"`
-}
+type SuiTransactionBlockBuilderMode string
 
-type ValidatorsApy struct {
-	APYs  []ValidatorApy `json:"apys"`
-	Epoch string         `json:"epoch"`
-}
-
-type ValidatorApy struct {
-	Address string  `json:"address"`
-	APY     float64 `json:"apy"`
-}
-
-type DelegatedStake struct {
-	ValidatorAddress string        `json:"validatorAddress"`
-	StakingPool      string        `json:"stakingPool"`
-	Stakes           []StakeObject `json:"stakes"`
-}
-
-type StakeObject struct {
-	StakedSuiId       string  `json:"stakedSuiId"`               // through Pending/Active/Unstaked
-	StakeRequestEpoch string  `json:"stakeRequestEpoch"`         // through Pending/Active/Unstaked
-	StakeActiveEpoch  string  `json:"stakeActiveEpoch"`          // through Pending/Active/Unstaked
-	Principal         string  `json:"principal"`                 // through Pending/Active/Unstaked
-	Status            string  `json:"status"`                    // through Pending/Active/Unstaked
-	EstimatedReward   *string `json:"estimatedReward,omitempty"` // through Active
-}
-
-type ResolvedNameServiceNames struct {
-	Data        []string `json:"data"`
-	NextCursor  *string  `json:"nextCursor,omitempty"`
-	HasNextPage bool     `json:"hasNextPage"`
-}
-
-type SuiMoveNormalizedModules map[string]SuiMoveNormalizedModule
-
-type SuiMoveNormalizedModule struct {
-	FileFormatVersion int                                  `json:"fileFormatVersion"`
-	Address           string                               `json:"address"`
-	Name              string                               `json:"name"`
-	Friends           []SuiMoveModuleId                    `json:"friends"`
-	Structs           map[string]SuiMoveNormalizedStruct   `json:"structs"`
-	ExposedFunctions  map[string]SuiMoveNormalizedFunction `json:"exposedFunctions"`
-}
-
-type SuiMoveModuleId struct {
-	Address string `json:"address"`
-	Name    string `json:"name"`
-}
-
-type SuiMoveNormalizedStruct struct {
-	Abilities      SuiMoveAbilitySet            `json:"abilities"`
-	TypeParameters []SuiMoveStructTypeParameter `json:"typeParameters"`
-	Fields         []SuiMoveNormalizedField     `json:"fields"`
-}
-
-type SuiMoveAbilitySet struct {
-	Abilities []SuiMoveAbility `json:"abilities"`
-}
-
-type SuiMoveAbility string
-
-var (
-	Copy  SuiMoveAbility = "Copy"
-	Drop  SuiMoveAbility = "Drop"
-	Store SuiMoveAbility = "Store"
-	Key   SuiMoveAbility = "Key"
+const (
+	Commit     SuiTransactionBlockBuilderMode = "Commit"
+	DevInspect SuiTransactionBlockBuilderMode = "DevInspect"
 )
 
-type SuiMoveStructTypeParameter struct {
-	Constraints SuiMoveAbilitySet `json:"constraints"`
-	IsPhantom   bool              `json:"isPhantom"`
+type CoinSupply struct {
+	Value string `json:"value"`
 }
 
-type SuiMoveNormalizedField struct {
-	Name string      `json:"name"`
-	Type interface{} `json:"type"` // native type: SuiMoveNormalizedType
+type TransactionBlockBytes struct {
+	Gas          []SuiObjectRef           `json:"gas"`
+	InputObjects []InputObjectKindWrapper `json:"inputObjects"`
+	TxBytes      string                   `json:"txBytes"`
 }
 
-type SuiMoveNormalizedFunction struct {
-	Visibility     SuiMoveVisibility   `json:"visibility"`
-	IsEntry        bool                `json:"isEntry"`
-	TypeParameters []SuiMoveAbilitySet `json:"typeParameters"`
-	Parameters     []interface{}       `json:"parameters"` // native type: []SuiMoveNormalizedType
-	Return         []interface{}       `json:"return"`     // native type: []SuiMoveNormalizedType
+type SuiTransactionBlockResponseOptions struct {
+	ShowInput          bool `json:"showInput,omitempty"`
+	ShowEffects        bool `json:"showEffects,omitempty"`
+	ShowEvents         bool `json:"showEvents,omitempty"`
+	ShowObjectChanges  bool `json:"showObjectChanges,omitempty"`
+	ShowBalanceChanges bool `json:"showBalanceChanges,omitempty"`
+	ShowRawInput       bool `json:"showRawInput,omitempty"`
 }
 
-type DryRunTransactionBlockResponse struct {
-	Effects        TransactionEffects   `json:"effects"`
-	Events         []SuiEvent           `json:"events"`
-	ObjectChanges  []SuiObjectChange    `json:"objectChanges"`
-	BalanceChanges []BalanceChange      `json:"balanceChanges"`
-	Input          TransactionBlockData `json:"input"`
-}
-
-type DevInspectResults struct {
-	Effects TransactionEffects   `json:"effects"`
-	Error   string               `json:"error,omitempty"`
-	Events  []SuiEvent           `json:"events"`
-	Results []SuiExecutionResult `json:"results,omitempty"`
-}
-
-type ObjectResponseError struct {
-	NotExists            ObjectResponseErrorCode `json:"notExists"`
-	DynamicFieldNotFound ObjectResponseErrorCode `json:"dynamicFieldNotFound"`
-	Deleted              ObjectResponseErrorCode `json:"deleted"`
-	Unknown              ObjectResponseErrorCode `json:"unknown"`
-	DisplayError         ObjectResponseErrorCode `json:"displayError"`
-}
-
-type ObjectResponseErrorCode struct {
-	Code           string `jons:"code"`
-	ObjectId       string `json:"object_id,omitempty"`
-	ParentObjectId string `json:"parent_object_id,omitempty"`
-	Digest         string `json:"digest"`
-	Version        string `json:"version"`
-	Error          string `json:"error"`
-}
-
-type SuiObjectData struct {
-	ObjectId            string                 `json:"objectId"`
-	Version             string                 `json:"version"`
-	Digest              string                 `json:"digest"`
-	Type                *string                `json:"type,omitempty"`
-	Owner               *ObjectOwnerWrapper    `json:"owner,omitempty"`
-	PreviousTransaction *string                `json:"previousTransaction,omitempty"`
-	StorageRebate       *string                `json:"storageRebate,omitempty"`
-	Display             *DisplayFieldsResponse `json:"display,omitempty"`
-	Content             *SuiParsedData         `json:"content,omitempty"`
-	Bcs                 *RawData               `json:"bcs,omitempty"`
-}
-
-// DisplayFieldsResponse
-type DisplayFieldsResponse struct {
-	Data  *map[string]string   `json:"data,omitempty"`
-	Error *ObjectResponseError `json:"error,omitempty"`
-}
-
-type SuiParsedData struct {
-	DataType          SuiParsedDataType       `json:"dataType"`                    //
-	Type              *string                 `json:"type,omitempty"`              // through moveObject
-	HasPublicTransfer *bool                   `json:"hasPublicTransfer,omitempty"` // through moveObject
-	Fields            *interface{}            `json:"fields,omitempty"`            // through moveObject, native type: MoveStruct
-	Disassembled      *map[string]interface{} `json:"disassembled,omitempty"`      // through package
-}
-
-type SuiParsedDataType string
-
-var (
-	Package    SuiParsedDataType = "package"
-	MoveObject SuiParsedDataType = "moveObject"
-)
-
-type RawData struct {
-	DataType          string                 `json:"dataType"`                    //
-	Id                string                 `json:"id,omitempty"`                // through package
-	Type              string                 `json:"type,omitempty"`              // through moveObject
-	HasPublicTransfer *bool                  `json:"hasPublicTransfer,omitempty"` // through moveObject
-	Version           int64                  `json:"version"`                     //
-	BcsBytes          *string                `json:"bcsBytes,omitempty"`          // through moveObject
-	ModuleMap         map[string]string      `json:"moduleMap,omitempty"`         // through package
-	TypeOriginTable   []TypeOrigin           `json:"typeOriginTable,omitempty"`   // through package
-	LinkageTable      map[string]UpgradeInfo `json:"linkageTable,omitempty"`      // through package
+type SuiTransactionBlockResponseQuery struct {
+	Filter  *TransactionFilter                  `json:"filter,omitempty"`
+	Options *SuiTransactionBlockResponseOptions `json:"options,omitempty"`
 }
 
 type TypeOrigin struct {
@@ -395,198 +525,129 @@ type UpgradeInfo struct {
 	UpgradedVersion int64  `json:"upgraded_version"`
 }
 
-type DynamicFieldInfo struct {
-	Name       DynamicFieldName `json:"name"`
-	BcsName    string           `json:"bcsName"`
-	Type       DynamicFieldType `json:"type"`
-	ObjectType string           `json:"objectType"`
-	ObjectId   string           `json:"objectId"`
-	Version    int64            `json:"version"`
-	Digest     string           `json:"digest"`
+type ValidatorApy struct {
+	Address string  `json:"address"`
+	APY     float64 `json:"apy"`
 }
 
-type DynamicFieldName struct {
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
+type ValidatorsApy struct {
+	APYs  []ValidatorApy `json:"apys"`
+	Epoch string         `json:"epoch"`
 }
 
-type DynamicFieldType string
+type ZkLoginAuthenticator struct {
+	Inputs        ZkLoginInputs    `json:"inputs"`
+	MaxEpoch      string           `json:"maxEpoch"`
+	UserSignature SignatureWrapper `json:"userSignature"`
+}
 
-var (
-	DynamicField  DynamicFieldType = "DynamicField"
-	DynamicObject DynamicFieldType = "DynamicObject"
+type ZkLoginInputs struct {
+	AddressSeed      string       `json:"addressSeed"`
+	HeaderBase64     string       `json:"headerBase64"`
+	IssBase64Details Claim        `json:"issBase64Details"`
+	ProofPoints      ZkLoginProof `json:"proofPoints"`
+}
+
+type ZkLoginProof struct {
+	A []string   `json:"a"`
+	B [][]string `json:"b"`
+	C []string   `json:"c"`
+}
+
+type PaginatedCheckpoints struct {
+	Data        []Checkpoint `json:"data"`
+	HasNextPage bool         `json:"hasNextPage"`
+	NextCursor  *string      `json:"nextCursor,omitempty"`
+}
+
+type ObjectValueKind string
+
+const (
+	ByImmutableReference ObjectValueKind = "ByImmutableReference"
+	ByMutableReference   ObjectValueKind = "ByMutableReference"
+	ByValue              ObjectValueKind = "ByValue"
 )
 
-type SuiTransactionBlock struct {
-	Data         TransactionBlockData `json:"data"`
-	TxSignatures []string             `json:"txSignatures"`
+type ResolvedNameServiceNames struct {
+	Data        []string `json:"data"`
+	NextCursor  *string  `json:"nextCursor,omitempty"`
+	HasNextPage bool     `json:"hasNextPage"`
 }
 
-type TransactionBlockData struct {
-	MessageVersion string                  `json:"messageVersion"`
-	Transaction    SuiTransactionBlockKind `json:"transaction"`
-	Sender         string                  `json:"sender"`
-	GasData        SuiGasData              `json:"gasData"`
+type EpochInfo struct {
+	Epoch                  string                `json:"epoch"`
+	Validators             []SuiValidatorSummary `json:"validators"`
+	EpochTotalTransactions string                `json:"epochTotalTransactions"`
+	FirstCheckpointId      string                `json:"firstCheckpointId"`
+	EpochStartTimestamp    string                `json:"epochStartTimestamp"`
+	EndOfEpochInfo         *EndOfEpochInfo       `json:"endOfEpochInfo"`
+	ReferenceGasPrice      *uint64               `json:"referenceGasPrice"`
 }
 
-type SuiTransactionBlockKind struct {
-	Kind                  string             `json:"kind"`                               // through ChangeEpoch/Genesis/ConsensusCommitPrologue/ProgrammableTransaction/AuthenticatorStateUpdate/EndOfEpochTransaction
-	ComputationCharge     *string            `json:"computation_charge,omitempty"`       // through ChangeEpoch
-	Epoch                 *string            `json:"epoch,omitempty"`                    // through ChangeEpoch/ConsensusCommitPrologue/AuthenticatorStateUpdate
-	EpochStartTimestampMs *string            `json:"epoch_start_timestamp_ms,omitempty"` // through ChangeEpoch
-	StorageCharge         *string            `json:"storage_charge,omitempty"`           // through ChangeEpoch
-	StorageRebate         *string            `json:"storage_rebate,omitempty"`           // through ChangeEpoch
-	Objects               *[]string          `json:"objects,omitempty"`                  // through Genesis
-	CommitTimestampMs     *string            `json:"commit_timestamp_ms,omitempty"`      // through ConsensusCommitPrologue
-	Round                 *string            `json:"round,omitempty"`                    // through ConsensusCommitPrologue/AuthenticatorStateUpdate
-	Inputs                *[]SuiCallArg      `json:"inputs,omitempty"`                   // through ProgrammableTransaction
-	Transactions          *[]json.RawMessage `json:"transactions,omitempty"`             // through ProgrammableTransaction
-	NewActiveJwks         *[]SuiActiveJwk    `json:"new_active_jwks,omitempty"`          // through AuthenticatorStateUpdate
+type EndOfEpochInfo struct {
+	LastCheckpointId             string `json:"lastCheckpointId"`
+	EpochEndTimestamp            string `json:"epochEndTimestamp"`
+	ProtocolVersion              string `json:"protocolVersion"`
+	ReferenceGasPrice            string `json:"referenceGasPrice"`
+	TotalStake                   string `json:"totalStake"`
+	StorageFundReinvestment      string `json:"storageFundReinvestment"`
+	StorageCharge                string `json:"storageCharge"`
+	StorageRebate                string `json:"storageRebate"`
+	StorageFundBalance           string `json:"storageFundBalance"`
+	StakeSubsidyAmount           string `json:"stakeSubsidyAmount"`
+	TotalGasFees                 string `json:"totalGasFees"`
+	TotalStakeRewardsDistributed string `json:"totalStakeRewardsDistributed"`
+	LeftoverStorageFundInflow    string `json:"leftoverStorageFundInflow"`
 }
 
-type SuiCallArg struct {
-	Type                 string       `json:"type"`                           // through immOrOwnedObject/sharedObject/receiving/pure
-	ObjectType           *string      `json:"objectType,omitempty"`           // through immOrOwnedObject/sharedObject/receiving
-	ObjectId             *string      `json:"objectId,omitempty"`             // through immOrOwnedObject/sharedObject/receiving
-	InitialSharedVersion *string      `json:"initialSharedVersion,omitempty"` // through sharedObject
-	Version              *string      `json:"version,omitempty"`              // through immOrOwnedObject/receiving
-	Mutable              *bool        `json:"mutable,omitempty"`              // through sharedObject
-	Digest               *string      `json:"digest,omitempty"`               // through immOrOwnedObject/receiving
-	ValueType            *string      `json:"valueType,omitempty"`            // through pure
-	Value                *interface{} `json:"value,omitempty"`                // through pure
+type EpochPage struct {
+	Data        []EpochInfo `json:"data"`
+	NextCursor  string      `json:"nextCursor,omitempty"`
+	HasNextPage bool        `json:"hasNextPage"`
 }
 
-type SuiActiveJwk struct {
-	Epoch string   `json:"epoch"`
-	Jwk   SuiJWK   `json:"jwk"`
-	JwkID SuiJwkID `json:"jwk_id"`
+type DynamicFieldPage struct {
+	Data        []DynamicFieldInfo `json:"data"`
+	NextCursor  *string            `json:"nextCursor,omitempty"`
+	HasNextPage bool               `json:"hasNextPage"`
 }
 
-type SuiJWK struct {
-	Alg string `json:"alg"`
-	E   string `json:"e"`
-	Kty string `json:"kty"`
-	N   string `json:"n"`
+type CheckpointPage struct {
+	Data        []Checkpoint `json:"data"`
+	NextCursor  *string      `json:"nextCursor,omitempty"`
+	HasNextPage bool         `json:"hasNextPage"`
 }
 
-type SuiJwkID struct {
-	Iss string `json:"iss"`
-	Kid string `json:"kid"`
+type SuiMoveNormalizedModules map[string]SuiMoveNormalizedModule
+
+type ProgrammableTransaction struct {
+	Transactions []SuiTransactionWrapper `json:"transactions"`
+	Inputs       []SuiCallArgWrapper     `json:"inputs"`
 }
 
-type SuiGasData struct {
-	Payment []SuiObjectRef `json:"payment"`
-	Owner   string         `json:"owner"`
-	Price   string         `json:"price"`
-	Budget  string         `json:"budget"`
+type GetPastObjectRequest struct {
+	ObjectID string `json:"objectId"`
+	Version  string `json:"version"`
 }
 
-type SuiObjectRef struct {
-	ObjectId string `json:"objectId"`
-	Version  int    `json:"version"`
-	Digest   string `json:"digest"`
-}
-
-type TransactionEffects struct {
-	MessageVersion       string                                      `json:"messageVersion"`
-	Status               ExecutionStatus                             `json:"status"`
-	ExecutedEpoch        string                                      `json:"executedEpoch"`
-	GasUsed              GasCostSummary                              `json:"gasUsed"`
-	ModifiedAtVersions   []TransactionBlockEffectsModifiedAtVersions `json:"modifiedAtVersions,omitempty"`
-	SharedObjects        []SuiObjectRef                              `json:"sharedObjects,omitempty"`
-	TransactionDigest    string                                      `json:"transactionDigest"`
-	Created              []OwnedObjectRef                            `json:"created,omitempty"`
-	Mutated              []OwnedObjectRef                            `json:"mutated,omitempty"`
-	Deleted              []SuiObjectRef                              `json:"deleted,omitempty"`
-	GasObject            OwnedObjectRef                              `json:"gasObject"`
-	EventsDigest         *string                                     `json:"eventsDigest,omitempty"`
-	Dependencies         []string                                    `json:"dependencies,omitempty"`
-	Unwrapped            []OwnedObjectRef                            `json:"unwrapped,omitempty"`
-	UnwrappedThenDeleted []SuiObjectRef                              `json:"unwrappedThenDeleted,omitempty"`
-	Wrapped              []SuiObjectRef                              `json:"wrapped,omitempty"`
-}
-
-type ExecutionStatus struct {
-	Status string `json:"status"`
-	Error  string `json:"error,omitempty"`
-}
-
-type GasCostSummary struct {
-	ComputationCost         string `json:"computationCost"`
-	StorageCost             string `json:"storageCost"`
-	StorageRebate           string `json:"storageRebate"`
-	NonRefundableStorageFee string `json:"nonRefundableStorageFee"`
-}
-
-type TransactionBlockEffectsModifiedAtVersions struct {
-	ObjectId       string `json:"objectId"`
+type LoadedChildObject struct {
+	ObjectID       string `json:"objectId"`
 	SequenceNumber string `json:"sequenceNumber"`
 }
 
-type OwnedObjectRef struct {
-	Owner     ObjectOwnerWrapper `json:"owner"`
-	Reference SuiObjectRef       `json:"reference"`
+type LoadedChildObjectsResponse struct {
+	LoadedChildObjects []LoadedChildObject `json:"loadedChildObjects"`
 }
 
-type SuiEvent struct {
-	Id                EventId     `json:"id"`
-	PackageId         string      `json:"packageId"`
-	TransactionModule string      `json:"transactionModule"`
-	Sender            string      `json:"sender"`
-	Type              string      `json:"type"`
-	ParsedJson        interface{} `json:"parsedJson"`
-	Bcs               string      `json:"bcs"`
-	TimestampMs       string      `json:"timestampMs,omitempty"`
+type MoveCallParams struct {
+	Arguments       []interface{} `json:"arguments"`
+	Function        string        `json:"function"`
+	Module          string        `json:"module"`
+	PackageObjectId string        `json:"packageObjectId"`
+	TypeArguments   []string      `json:"typeArguments,omitempty"`
 }
 
-type EventId struct {
-	TxDigest string `json:"txDigest"`
-	EventSeq string `json:"eventSeq"`
+type TransferObjectParams struct {
+	ObjectID  string `json:"objectId"`
+	Recipient string `json:"recipient"`
 }
-
-type SuiObjectChange struct {
-	Type            string              `json:"type"`                      //
-	Sender          *string             `json:"sender,omitempty"`          // through transferred/mutated/deleted/wrapped/created
-	Recipient       *ObjectOwnerWrapper `json:"recipient,omitempty"`       // through transferred
-	Owner           *ObjectOwnerWrapper `json:"owner,omitempty"`           // through mutated/created
-	ObjectType      *string             `json:"objectType,omitempty"`      // through transferred/mutated/deleted/wrapped/created
-	ObjectId        *string             `json:"objectId,omitempty"`        // through transferred/mutated/deleted/wrapped/created
-	Version         string              `json:"version"`                   //
-	PreviousVersion *string             `json:"previousVersion,omitempty"` // through mutated/
-	Digest          *string             `json:"digest,omitempty"`          // through published/transferred/mutated/created
-	Modules         *[]string           `json:"modules,omitempty"`         // through published/
-	PackageId       *string             `json:"packageId,omitempty"`       // through published/
-}
-
-type BalanceChange struct {
-	Owner    ObjectOwnerWrapper `json:"owner"`
-	CoinType string             `json:"coinType"`
-	Amount   string             `json:"amount"`
-}
-
-type EndOfEpochData struct {
-	EpochCommitments         []CheckpointCommitment `json:"epochCommitments"`
-	NextEpochCommittee       [][2]string            `json:"nextEpochCommittee"`
-	NextEpochProtocolVersion string                 `json:"nextEpochProtocolVersion"`
-}
-
-type CheckpointCommitment struct {
-	ECMHLiveObjectSetDigest ECMHLiveObjectSetDigest `json:"ecmhLiveObjectSetDigest"`
-}
-
-type ECMHLiveObjectSetDigest struct {
-	Digest []int `json:"digest"`
-}
-
-type SuiExecutionResult struct {
-	MutableReferenceOutputs [][3]interface{} `json:"mutableReferenceOutputs,omitempty"`
-	ReturnValues            [][2]interface{} `json:"returnValues,omitempty"`
-}
-
-type SuiMoveVisibility string
-
-var (
-	Private SuiMoveVisibility = "Private"
-	Public  SuiMoveVisibility = "Public"
-	Friend  SuiMoveVisibility = "Friend"
-)

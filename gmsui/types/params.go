@@ -98,8 +98,6 @@ type GetCheckpointParams struct {
 	ID CheckpointId `json:"id"`
 }
 
-type CheckpointId = string
-
 type GetCheckpointsParams struct {
 	Cursor          *string `json:"cursor,omitempty"`
 	Limit           *int    `json:"limit,omitempty"`
@@ -188,44 +186,6 @@ type SignAndExecuteTransactionBlockParams struct {
 	RequestType      *ExecuteTransactionRequestType      `json:"requestType,omitempty"`
 }
 
-type SuiObjectDataOptions struct {
-	ShowBcs                 bool `json:"showBcs,omitempty"`
-	ShowContent             bool `json:"showContent,omitempty"`
-	ShowDisplay             bool `json:"showDisplay,omitempty"`
-	ShowOwner               bool `json:"showOwner,omitempty"`
-	ShowPreviousTransaction bool `json:"showPreviousTransaction,omitempty"`
-	ShowStorageRebate       bool `json:"showStorageRebate,omitempty"`
-	ShowType                bool `json:"showType,omitempty"`
-}
-
-type SuiTransactionBlockResponseOptions struct {
-	ShowInput          bool `json:"showInput,omitempty"`
-	ShowEffects        bool `json:"showEffects,omitempty"`
-	ShowEvents         bool `json:"showEvents,omitempty"`
-	ShowObjectChanges  bool `json:"showObjectChanges,omitempty"`
-	ShowBalanceChanges bool `json:"showBalanceChanges,omitempty"`
-	ShowRawInput       bool `json:"showRawInput,omitempty"`
-}
-
-type SuiObjectResponseQuery struct {
-	Filter  *SuiObjectDataFilter  `json:"filter,omitempty"`
-	Options *SuiObjectDataOptions `json:"options,omitempty"`
-}
-
-type SuiObjectDataFilter struct {
-	*SuiObjectDataFilter_MatchAll
-	*SuiObjectDataFilter_MatchAny
-	*SuiObjectDataFilter_MatchNone
-	*SuiObjectDataFilter_Package
-	*SuiObjectDataFilter_MoveModule
-	*SuiObjectDataFilter_StructType
-	*SuiObjectDataFilter_AddressOwner
-	*SuiObjectDataFilter_ObjectOwner
-	*SuiObjectDataFilter_ObjectId
-	*SuiObjectDataFilter_ObjectIds
-	*SuiObjectDataFilter_Version
-}
-
 type SuiObjectDataFilter_MatchAll struct {
 	MatchAll []SuiObjectDataFilter `json:"MatchAll"`
 }
@@ -282,24 +242,6 @@ var (
 	Descending QueryTransactionBlocksParams_Order = "descending"
 )
 
-type SuiTransactionBlockResponseQuery struct {
-	Filter  *TransactionFilter                  `json:"filter,omitempty"`
-	Options *SuiTransactionBlockResponseOptions `json:"options,omitempty"`
-}
-
-type TransactionFilter struct {
-	Checkpoint        *string                             `json:"Checkpoint,omitempty"`
-	MoveFunction      *TransactionFilter_MoveFunction     `json:"MoveFunction,omitempty"`
-	InputObject       *string                             `json:"InputObject,omitempty"`
-	ChangedObject     *string                             `json:"ChangedObject,omitempty"`
-	FromAddress       *string                             `json:"FromAddress,omitempty"`
-	ToAddress         *string                             `json:"ToAddress,omitempty"`
-	FromAndToAddress  *TransactionFilter_FromAndToAddress `json:"FromAndToAddress,omitempty"`
-	FromOrToAddress   *TransactionFilter_FromOrToAddress  `json:"FromOrToAddress,omitempty"`
-	TransactionKind   *string                             `json:"TransactionKind,omitempty"`
-	TransactionKindIn *[]string                           `json:"TransactionKindIn,omitempty"`
-}
-
 type TransactionFilter_MoveFunction struct {
 	Function *string `json:"function,omitempty"`
 	Module   *string `json:"module,omitempty"`
@@ -336,25 +278,3 @@ type SuiEventFilter_TimeRange struct {
 }
 
 type SuiEventFilters []SuiEventFilter
-
-type SuiEventFilter struct {
-	Sender          *string                         `json:"Sender,omitempty"`
-	Transaction     *string                         `json:"Transaction,omitempty"`
-	Package         *string                         `json:"Package,omitempty"`
-	MoveModule      *SuiEventFilter_MoveModule      `json:"MoveModule,omitempty"`
-	MoveEventType   *string                         `json:"MoveEventType,omitempty"`
-	MoveEventModule *SuiEventFilter_MoveEventModule `json:"MoveEventModule,omitempty"`
-	MoveEventField  *SuiEventFilter_MoveEventField  `json:"MoveEventField,omitempty"`
-	TimeRange       *SuiEventFilter_TimeRange       `json:"TimeRange,omitempty"`
-	All             *SuiEventFilters                `json:"All,omitempty"`
-	Any             *SuiEventFilters                `json:"Any,omitempty"`
-	And             *SuiEventFilters                `json:"And,omitempty"`
-	Or              *SuiEventFilters                `json:"Or,omitempty"`
-}
-
-type ExecuteTransactionRequestType string
-
-var (
-	WaitForEffectsCert    ExecuteTransactionRequestType = "WaitForEffectsCert"
-	WaitForLocalExecution ExecuteTransactionRequestType = "WaitForLocalExecution"
-)
