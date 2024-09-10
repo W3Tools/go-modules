@@ -81,7 +81,7 @@ type MoveValue interface {
 type MoveNumberValue uint64
 type MoveBooleanValue bool
 type MoveStringValue string
-type MoveValue_MoveValues []MoveValue
+type MoveValue_MoveValues []MoveValueWrapper
 type MoveIdValue struct {
 	Id string `json:"id"`
 }
@@ -115,7 +115,7 @@ func (w *MoveValueWrapper) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	var mvs []MoveValue
+	var mvs []MoveValueWrapper
 	if err := json.Unmarshal(data, &mvs); err == nil {
 		w.MoveValue = MoveValue_MoveValues(mvs)
 		return nil
@@ -155,7 +155,7 @@ func (w MoveValueWrapper) MarshalJSON() ([]byte, error) {
 	case MoveStructValue:
 		return json.Marshal(MoveStruct(v))
 	case MoveValue_MoveValues:
-		return json.Marshal([]MoveValue(v))
+		return json.Marshal(v)
 	default:
 		return nil, errors.New("unknown MoveValue type")
 	}
