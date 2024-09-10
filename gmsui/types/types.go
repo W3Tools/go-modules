@@ -144,8 +144,8 @@ type SuiExecutionResult struct {
 }
 
 type DisplayFieldsResponse struct {
-	Data  *map[string]string          `json:"data,omitempty"`
-	Error *ObjectResponseErrorWrapper `json:"error,omitempty"`
+	Data  map[string]*string          `json:"data"`
+	Error *ObjectResponseErrorWrapper `json:"error"`
 }
 
 type DryRunTransactionBlockResponse struct {

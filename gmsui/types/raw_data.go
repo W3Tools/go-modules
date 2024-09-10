@@ -10,11 +10,11 @@ type RawData interface {
 }
 
 type RawDataMoveObject struct {
-	BcsBytes          string `json:"bcsBytes"`
 	DataType          string `json:"dataType"`
-	HasPublicTransfer bool   `json:"hasPublicTransfer"`
 	Type              string `json:"type"`
+	HasPublicTransfer bool   `json:"hasPublicTransfer"`
 	Version           uint64 `json:"version"`
+	BcsBytes          string `json:"bcsBytes"`
 }
 
 type RawDataPackage struct {
