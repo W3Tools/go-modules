@@ -90,8 +90,9 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 	}
 
 	type argumentType struct {
-		Pure   any
-		Object *sui_types.ObjectArg
+		Pure         any
+		Object       *sui_types.ObjectArg
+		typeArgument *sui_types.Argument
 	}
 	var (
 		inputArguments    = make([]*argumentType, len(normalized.Parameters))
@@ -105,6 +106,12 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 		var (
 			inputarg = args[idx]
 		)
+
+		byvalue, ok := inputarg.(*sui_types.Argument)
+		if ok {
+			inputArguments[idx] = &argumentType{typeArgument: byvalue}
+			continue
+		}
 
 		pureType, ok := parameter.SuiMoveNormalizedType.(types.SuiMoveNormalizedType_String)
 		if ok {
@@ -217,6 +224,10 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 
 		if v.Object != nil {
 			return ptb.builder.Obj(*v.Object)
+		}
+
+		if v.typeArgument != nil {
+			return *v.typeArgument, nil
 		}
 
 		return sui_types.Argument{}, fmt.Errorf("invalid argument")
