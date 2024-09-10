@@ -20,10 +20,10 @@ type RawDataMoveObject struct {
 type RawDataPackage struct {
 	DataType        string                 `json:"dataType"`
 	ID              string                 `json:"id"`
-	LinkageTable    map[string]UpgradeInfo `json:"linkageTable"`
+	Version         uint64                 `json:"version"`
 	ModuleMap       map[string]string      `json:"moduleMap"`
 	TypeOriginTable []TypeOrigin           `json:"typeOriginTable"`
-	Version         uint64                 `json:"version"`
+	LinkageTable    map[string]UpgradeInfo `json:"linkageTable"`
 }
 
 func (RawDataMoveObject) isRawData() {}
