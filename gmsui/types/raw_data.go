@@ -10,20 +10,20 @@ type RawData interface {
 }
 
 type RawDataMoveObject struct {
-	BcsBytes          string `json:"bcsBytes"`
 	DataType          string `json:"dataType"`
-	HasPublicTransfer bool   `json:"hasPublicTransfer"`
 	Type              string `json:"type"`
+	HasPublicTransfer bool   `json:"hasPublicTransfer"`
 	Version           uint64 `json:"version"`
+	BcsBytes          string `json:"bcsBytes"`
 }
 
 type RawDataPackage struct {
 	DataType        string                 `json:"dataType"`
 	ID              string                 `json:"id"`
-	LinkageTable    map[string]UpgradeInfo `json:"linkageTable"`
+	Version         uint64                 `json:"version"`
 	ModuleMap       map[string]string      `json:"moduleMap"`
 	TypeOriginTable []TypeOrigin           `json:"typeOriginTable"`
-	Version         uint64                 `json:"version"`
+	LinkageTable    map[string]UpgradeInfo `json:"linkageTable"`
 }
 
 func (RawDataMoveObject) isRawData() {}

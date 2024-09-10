@@ -11,9 +11,9 @@ type SuiParsedData interface {
 
 type SuiParsedMoveObjectData struct {
 	DataType          string            `json:"dataType"`
-	Fields            MoveStructWrapper `json:"fields"`
-	HasPublicTransfer bool              `json:"hasPublicTransfer"`
 	Type              string            `json:"type"`
+	HasPublicTransfer bool              `json:"hasPublicTransfer"`
+	Fields            MoveStructWrapper `json:"fields"`
 }
 
 type SuiParsedPackageData struct {
@@ -61,7 +61,7 @@ func (w *SuiParsedDataWrapper) UnmarshalJSON(data []byte) error {
 func (w *SuiParsedDataWrapper) MarshalJSON() ([]byte, error) {
 	switch data := w.SuiParsedData.(type) {
 	case SuiParsedMoveObjectData:
-		return json.Marshal(SuiParsedMoveObjectData{DataType: data.DataType, Fields: data.Fields, Type: data.Type})
+		return json.Marshal(SuiParsedMoveObjectData{DataType: data.DataType, Type: data.Type, HasPublicTransfer: data.HasPublicTransfer, Fields: data.Fields})
 	case SuiParsedPackageData:
 		return json.Marshal(SuiParsedPackageData{DataType: data.DataType, Disassembled: data.Disassembled})
 	default:
