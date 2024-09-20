@@ -113,6 +113,12 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 			continue
 		}
 
+		_, ok = parameter.SuiMoveNormalizedType.(types.SuiMoveNormalizedType_Vector)
+		if ok {
+			inputArguments[idx] = &argumentType{Pure: inputarg}
+			continue
+		}
+
 		pureType, ok := parameter.SuiMoveNormalizedType.(types.SuiMoveNormalizedType_String)
 		if ok {
 			var purevalue any
