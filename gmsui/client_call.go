@@ -96,7 +96,12 @@ func GetDynamicFieldObjectAndUnmarshal[T any, NameType any](client *client.SuiCl
 		return nil, nil, err
 	}
 
-	jsb, err := raw.Data.Content.MarshalJSON()
+	object, ok := raw.Data.Content.SuiParsedData.(types.SuiParsedMoveObjectData)
+	if !ok {
+		return nil, nil, fmt.Errorf("unknown data type, expected an object id, value: %v", raw.Data.Content.SuiParsedData)
+	}
+
+	jsb, err := object.Fields.MarshalJSON()
 	if err != nil {
 		return nil, nil, err
 	}
