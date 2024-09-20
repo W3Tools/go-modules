@@ -59,6 +59,10 @@ func (redisClient *RedisClient) Del(keys ...string) *redis.IntCmd {
 	return redisClient.client.Del(redisClient.Context, keys...)
 }
 
+func (redisClient *RedisClient) Exists(key string) *redis.IntCmd {
+	return redisClient.client.Exists(redisClient.Context, key)
+}
+
 // ------------------------------------------------------------------------------
 func (redisClient *RedisClient) MSet(values ...interface{}) *redis.StatusCmd {
 	return redisClient.client.MSet(redisClient.Context, values...)
