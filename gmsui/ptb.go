@@ -123,7 +123,7 @@ func (ptb *ProgrammableTransactionBlock) ParseFunctionArguments(target string, a
 		if ok {
 			var purevalue any
 			switch pureType {
-			case "Bool", "U8", "U64", "U128", "U256":
+			case "Bool", "U8", "U16", "U32", "U64", "U128", "U256":
 				purevalue = inputarg
 			case "Address":
 				var address *move_types.AccountAddress
