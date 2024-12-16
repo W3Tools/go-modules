@@ -7,7 +7,7 @@ import (
 )
 
 func DevInspect(suiClient *client.SuiClient, target string, args []interface{}, typeArgs []string) (*types.DevInspectResults, error) {
-	builder := NewProgrammableTransactionBlock(suiClient)
+	builder := NewTransaction(suiClient)
 
 	_, err := builder.NewMoveCall(target, args, typeArgs)
 	if err != nil {
