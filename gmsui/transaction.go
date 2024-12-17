@@ -50,31 +50,51 @@ func (txb *Transaction) SplitCoins(coin interface{}, amounts []interface{}) (ret
 	case sui_types.Argument:
 		inputCoin = coin
 	case string:
-		address, err := sui_types.NewAddressFromHex(utils.NormalizeSuiAddress(coin))
+		result, err := txb.client.GetObject(types.GetObjectParams{ID: utils.NormalizeSuiAddress(coin)})
 		if err != nil {
-			return nil, fmt.Errorf("invalid address [%v]", err)
+			return nil, fmt.Errorf("failed to get object, err: %v", err)
 		}
 
-		inputCoin, err = txb.builder.Pure(address)
+		objectId, err := sui_types.NewObjectIdFromHex(result.Data.ObjectId)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create object id, err: %v", err)
+		}
+		version, err := strconv.ParseUint(result.Data.Version, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse version, err: %v", err)
+		}
+		digest, err := sui_types.NewDigest(result.Data.Digest)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create digest, err: %v", err)
+		}
+
+		arg := sui_types.ObjectArg{
+			ImmOrOwnedObject: &sui_types.ObjectRef{
+				ObjectId: *objectId,
+				Version:  version,
+				Digest:   *digest,
+			},
+		}
+		inputCoin, err = txb.builder.Obj(arg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create pure argument, err: %v", err)
 		}
 	default:
-		return nil, fmt.Errorf("invalie input coin type, got %T", coin)
+		return nil, fmt.Errorf("input coin should one of address(string), sui_types.Argument or *TransactionInputGasCoin, got %T", coin)
 	}
 
 	amountArguments := make([]sui_types.Argument, len(amounts))
 	for i, amount := range amounts {
 		switch amount := amount.(type) {
-		case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64:
-			amountArguments[i], err = txb.builder.Pure(amount.(uint64))
+		case uint, uint8, uint16, uint32, uint64:
+			amountArguments[i], err = txb.builder.Pure(UnsignedIntegerToUint64(amount))
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pure argument, err: %v", err)
 			}
 		case sui_types.Argument:
 			amountArguments[i] = amount
 		default:
-			return nil, fmt.Errorf("invalid amount type, type: %T, value: %v", amount, amount)
+			return nil, fmt.Errorf("input amount should be uint or sui_types.Argument, got %T", amount)
 		}
 	}
 
