@@ -247,10 +247,24 @@ func (txb *Transaction) DryRunTransactionBlock() (*types.DryRunTransactionBlockR
 	)
 	bs, err := bcs.Marshal(tx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal transaction, err: %v", err)
+		return nil, fmt.Errorf("can not marshal transaction, err: %v", err)
 	}
 
 	return txb.client.DryRunTransactionBlock(types.DryRunTransactionBlockParams{TransactionBlock: bs})
+}
+
+func (txb *Transaction) DevInspectTransactionBlock() (*types.DevInspectResults, error) {
+	if txb.Sender == nil {
+		return nil, fmt.Errorf("missing transaction sender")
+	}
+
+	bs, err := bcs.Marshal(txb.builder.Finish())
+	if err != nil {
+		return nil, fmt.Errorf("can not marshal transaction: %v", err)
+	}
+
+	txBytes := append([]byte{0}, bs...)
+	return txb.client.DevInspectTransactionBlock(types.DevInspectTransactionBlockParams{Sender: txb.Sender.String(), TransactionBlock: txBytes})
 }
 
 func (txb *Transaction) SetSender(sender string) {
