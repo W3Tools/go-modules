@@ -162,7 +162,7 @@ type ResolveNameServiceAddressParams struct {
 }
 
 type DryRunTransactionBlockParams struct {
-	TransactionBlock interface{} `json:"transactionBlock"`
+	TransactionBlock []byte `json:"transactionBlock"`
 }
 
 type DevInspectTransactionBlockParams struct {

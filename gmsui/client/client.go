@@ -609,7 +609,7 @@ func (client *SuiClient) DryRunTransactionBlock(input types.DryRunTransactionBlo
 	return response, client.request(
 		SuiTransportRequestOptions{
 			Method: "sui_dryRunTransactionBlock",
-			Params: []any{input.TransactionBlock},
+			Params: []any{b64.ToBase64(input.TransactionBlock)},
 		},
 		&response,
 	)
