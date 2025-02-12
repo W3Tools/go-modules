@@ -76,12 +76,16 @@ func setGasBudget(txb *Transaction) error {
 			return fmt.Errorf("failed to parse storage rebate, err: %v", err)
 		}
 
-		gasBudget := baseComputationCostWithOverhead + storageCost - storageRebate
-
-		if gasBudget > baseComputationCostWithOverhead {
-			txb.GasConfig.Budget = gasBudget
-		} else {
+		cost := baseComputationCostWithOverhead + storageCost
+		if storageRebate > cost {
 			txb.GasConfig.Budget = baseComputationCostWithOverhead
+		} else {
+			gasBudget := baseComputationCostWithOverhead + storageCost - storageRebate
+			if gasBudget > baseComputationCostWithOverhead {
+				txb.GasConfig.Budget = gasBudget
+			} else {
+				txb.GasConfig.Budget = baseComputationCostWithOverhead
+			}
 		}
 	}
 
