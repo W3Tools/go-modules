@@ -14,7 +14,7 @@ type ObjectStringRef struct {
 	Digest   string `json:"digest"`
 }
 
-func (ref ObjectStringRef) toObjectRef() (*sui_types.ObjectRef, error) {
+func (ref ObjectStringRef) ToObjectRef() (*sui_types.ObjectRef, error) {
 	objectId, err := sui_types.NewObjectIdFromHex(ref.ObjectId)
 	if err != nil {
 		return nil, fmt.Errorf("can not create object id from hex [%s]: %v", ref.ObjectId, err)
@@ -32,5 +32,5 @@ func (ref ObjectStringRef) toObjectRef() (*sui_types.ObjectRef, error) {
 }
 
 func coinStructToObjectRef(coin types.CoinStruct) (*sui_types.ObjectRef, error) {
-	return ObjectStringRef{ObjectId: coin.CoinObjectId, Version: coin.Version, Digest: coin.Digest}.toObjectRef()
+	return ObjectStringRef{ObjectId: coin.CoinObjectId, Version: coin.Version, Digest: coin.Digest}.ToObjectRef()
 }

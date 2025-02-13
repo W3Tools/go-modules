@@ -365,6 +365,8 @@ func (txb *Transaction) resolveFunctionArguments(inputArguments []interface{}, r
 				unresolvedParameter.Objects[idx] = UnresolvedObject{Mutable: false, ObjectId: inputArguments[idx].(string)}
 			case reflect.TypeOf(types.SuiMoveNormalizedType_MutableReference{}):
 				unresolvedParameter.Objects[idx] = UnresolvedObject{Mutable: true, ObjectId: inputArguments[idx].(string)}
+			case reflect.TypeOf(types.SuiMoveNormalizedType_Struct{}):
+				unresolvedParameter.Objects[idx] = UnresolvedObject{Mutable: false, ObjectId: inputArguments[idx].(string)}
 			default:
 				return nil, fmt.Errorf("function parameter [%v] is not supported at index %d", reflectParameter.Type(), idx)
 			}
@@ -427,7 +429,7 @@ func objectResponseToObjectArg(data *types.SuiObjectResponse, mutable bool) (*su
 		}
 	default:
 		// Other object: set the version and digest
-		objectRef, err := ObjectStringRef{ObjectId: data.Data.ObjectId, Version: data.Data.Version, Digest: data.Data.Digest}.toObjectRef()
+		objectRef, err := ObjectStringRef{ObjectId: data.Data.ObjectId, Version: data.Data.Version, Digest: data.Data.Digest}.ToObjectRef()
 		if err != nil {
 			return nil, fmt.Errorf("can not convert object ref: %v", err)
 		}
